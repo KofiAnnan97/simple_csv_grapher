@@ -115,18 +115,21 @@ def save_plot(title):
     filename = re.sub('\-|\:|\s+', '_', filename)
     filepath = os.path.join(graphs_path, filename)
     plt.savefig(filepath)
+    print("%s.png has been created."%(filepath))
 
 def main(argv=None):
     
     parser = argparse.ArgumentParser(prog='CSV Graphing', description='Simple program that graphs csv data.')
     parser.add_argument('-f', '--file', action='store', type=str, help='Choose file')
-    parser.add_argument('-p', '--path', action='store', type=str, help='Path to file')
+    parser.add_argument('-p', '--path', action='store', type=str, help='Path to file (leave blank if in log directory)')
     parser.add_argument('-c', '--column-names', action='extend', nargs='+', type=str, help='Give desired column headers.')
     parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "scatter"]', default="line")
-    parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml file')
+    parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for generated graph')
     parser.add_argument('-s', '--save', action='store_true', help='Save file based on csv file.')
+    parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml file')
 
     args = parser.parse_args()
+    print(args)
 
     if args.yaml is not None:
         import yaml
@@ -172,14 +175,14 @@ def main(argv=None):
         filepath = os.path.join(log_path, path_to_file, filename)
         col_names = args.column_names
         graph_type = args.graph_type
+        title = args.title if args.title is not None else filename
 
         values = parse_csv(filepath, col_names)
-        #convert_gps_to_xy(filename, values)
         
         if graph_type == 'line':
-            simple_2d_plot(filename, col_names, values[0], values[1], args.save)
+            simple_2d_plot(title, col_names, values[0], values[1], args.save)
         elif graph_type == 'scatter':
-            simple_scatter(filename, col_names, values[0], values[1], args.save)
+            simple_scatter(title, col_names, values[0], values[1], args.save)
         else:
             print("Unrecognized graph type: %s"%(graph_type))
 
