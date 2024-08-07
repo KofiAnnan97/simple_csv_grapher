@@ -5,17 +5,6 @@ import csv
 import sys
 import glob
 
-"""
-Place this script at the same level as your log folder in your directory. Makae 
-sure the log folder is name 'log' or update the name in the 'log_path' variable
-below. 
-
-Best practices:
-The command line option should only be used when dealing with a single csv file
-For multiple files the yaml option should be applied. Make sure that the yaml 
-file used should be at the same level as this script. 
-"""
-
 currentFolder = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(currentFolder, 'log')
 
@@ -47,20 +36,7 @@ def parse_csv(filepath, col_names):
     
     return vals
 
-def simple_2d_plot(graph_name, labels, x, y, save_file):
-    fig, ax = plt.subplots()
-    plt.title(graph_name)
-        
-    ax.set_xlabel(labels[0])
-    ax.set_ylabel(labels[1])
-    ax.autoscale(enable=True, axis='both')
-    ax.plot(x, y)
-    if save_file == True:
-        save_plot(graph_name[:-4])
-    else:
-        plt.show()
-
-def multi_2d_plot(graph_name, labels, data, save_file):
+def multi_2d_line(graph_name, labels, data, save_file):
     fig, ax = plt.subplots()
     plt.title(graph_name)
     ax.set_xlabel(labels[0])
@@ -75,16 +51,23 @@ def multi_2d_plot(graph_name, labels, data, save_file):
     else:
         plt.show()
 
-def simple_scatter(graph_name, labels, x, y, save_file):
-    fig, ax = plt.subplots()
+def multi_3d_line(graph_name,labels, data, save_file):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
     plt.title(graph_name)
 
     ax.set_xlabel(labels[0])
     ax.set_ylabel(labels[1])
-    ax.autoscale(enable=True, axis='both')
-    ax.scatter(x, y)
+    ax.set_zlabel(labels[2])
+
+    for key, val in data.items():
+        ax.plot(val[0], val[1], val[2], label=key)
+    
+    ax.set_autoscalex_on = True
+    ax.set_autoscaley_on = True
+    plt.legend()
     if save_file == True:
-        save_plot(graph_name[:-4])
+        save_plot(graph_name)
     else:
         plt.show()
 
@@ -119,17 +102,17 @@ def save_plot(title):
 
 def main(argv=None):
     
-    parser = argparse.ArgumentParser(prog='CSV Graphing', description='Simple program that graphs csv data.')
-    parser.add_argument('-f', '--file', action='store', type=str, help='Choose file')
-    parser.add_argument('-p', '--path', action='store', type=str, help='Path to file (leave blank if in log directory)')
-    parser.add_argument('-c', '--column-names', action='extend', nargs='+', type=str, help='Give desired column headers.')
-    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "scatter"]', default="line")
+    parser = argparse.ArgumentParser(prog='CSV Graphing', description='A simple program that graphs data from csv files.')
+    parser.add_argument('-f', '--file', action='store', type=str, help='Desired CSV file.')
+    parser.add_argument('-p', '--path', action='store', type=str, help='Path to desired file (leave blank if parent directory is log/).')
+    parser.add_argument('-c', '--column-names', action='extend', nargs='+', type=str, help='Give desired column headers (leave spaces between each header).')
+    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line3d", "scatter"]', default="line")
     parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for generated graph')
-    parser.add_argument('-s', '--save', action='store_true', help='Save file based on csv file.')
-    parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml file')
+    parser.add_argument('-s', '--save', action='store_true', help='Save graph.')
+    parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml config file')
 
     args = parser.parse_args()
-    print(args)
+    #print(args)
 
     if args.yaml is not None:
         import yaml
@@ -142,7 +125,7 @@ def main(argv=None):
                     key = list(file.keys())[0]
                     val = file[key]
                     if val['name'] == 'latest':
-                        if 'path' in val:
+                        if 'path' in val: 
                             path = os.path.join(log_path, val['path'], '*')
                         else:
                             path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'], '*')
@@ -155,12 +138,17 @@ def main(argv=None):
                         else:
                             filepath = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'], val['name'])
                     data[key] = parse_csv(filepath, val['headers'])
-                labels = [yf['labels']['x_label'], yf['labels']['y_label']]
+                if 'z_label' in yf['labels']: 
+                    labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
+                else:
+                    labels = [yf['labels']['x_label'], yf['labels']['y_label']]
                 title = yf['title']
                 type = yf['type']
                 save_graph = yf['save']
                 if type == 'line':
-                    multi_2d_plot(title,labels,data,save_graph)
+                    multi_2d_line(title,labels,data,save_graph)
+                elif type == 'line3d':
+                    multi_3d_line(title,labels,data,save_graph)
                 elif type == 'scatter':
                     multi_scatter(title,labels,data,save_graph)
         except FileNotFoundError:
@@ -178,11 +166,14 @@ def main(argv=None):
         title = args.title if args.title is not None else filename
 
         values = parse_csv(filepath, col_names)
+        data = {filename: values}
         
         if graph_type == 'line':
-            simple_2d_plot(title, col_names, values[0], values[1], args.save)
+            multi_2d_line(title,col_names,data,args.save)
+        elif graph_type == 'line3d':
+            multi_3d_line(title,col_names,data,args.save)
         elif graph_type == 'scatter':
-            simple_scatter(title, col_names, values[0], values[1], args.save)
+            multi_scatter(title,col_names,data,args.save)
         else:
             print("Unrecognized graph type: %s"%(graph_type))
 
