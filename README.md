@@ -11,14 +11,15 @@
 
 ## Python3 Prerequistes:
 ```bash
-$ pip install matplotlib pyyaml
+$ pip install matplotlib pyyaml numpy
 ```
 ## Usage
 This script can be run in two distinct manners (command line and configuration file). To graph data from a single csv command line may be the quickest option, though the other option still works. For graph data from multiple csv files the yaml configuration is only option.  
 ### Command line
 This method allows the user to plot and save a .png file based on a specified csv file. It only support one file at a time. 
 ```
-usage: CSV Graphing [-h] [-f FILE] [-p PATH] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE] [-t TITLE] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-f FILE] [-p PATH] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE]
+                    [-t TITLE] [-a] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
@@ -29,11 +30,12 @@ options:
   -c COLUMN_NAMES [COLUMN_NAMES ...], --column-names COLUMN_NAMES [COLUMN_NAMES ...]
                         Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter"]
+                        Choose one of the following ["line", "line3d", "scatter", "scatter3d",
+                        "scatterh", "hist", "stem"]
   -t TITLE, --title TITLE
-                        Provide title for generated graph
+                        Provide title for generated graph.
   -s, --save            Save graph.
-  -y YAML, --yaml YAML  Generate graph via yaml config file
+  -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
 Go to ``` python3 CsvGrapher_v2.py -h``` for an up to date description on how to use the command line. 
 
@@ -49,7 +51,7 @@ Graphing multiple csv files requires the use of the yaml configuration method. T
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
 - **```labels```** correlates to the x, y and z labels (only supports one of each). The z label is option.  
 - **```title```** is the title of the generated graph. 
-- **```type```** is the type of graph that this script supports (Currently line graphs (2D or 3D) and a scatter plot).
+- **```type```** determines what type of graph will be generated. Currently supports: line graphs (2D and 3D), scatter plot (2D and 3D), scatter plot with histograms, histogram and stem plot.
 - **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false).
 
 Here's an example of how a yaml file can be made.
