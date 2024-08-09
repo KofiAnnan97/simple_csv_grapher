@@ -223,19 +223,21 @@ def main(argv=None):
                 for file in yf['files']:
                     key = list(file.keys())[0]
                     val = file[key]
-                    if val['name'] == 'latest':
-                        if 'path' in val: 
-                            path = os.path.join(log_path, val['path'], '*')
-                        else:
-                            path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'], '*')
-                        list_of_files = glob.glob(path)
-                        filepath = max(list_of_files, key=os.path.getctime)
-                        print("Fetching %s"%(filepath))
+                    if 'path' in val: 
+                        path = os.path.join(log_path, val['path'])
                     else:
-                        if 'path' in val:
-                            filepath = os.path.join(log_path, val['path'], val['name'])
-                        else:
-                            filepath = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'], val['name'])
+                        path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
+                    
+                    if val['name'] == 'latest':
+                        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+                        list_of_files.sort()
+                        filepath = max(list_of_files)
+                    elif val['name'] == 'lastModified':
+                        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+                        filepath = max(list_of_files, key=os.path.getmtime)
+                    else:
+                        filepath = os.path.join(path, val['name'])
+                    print("Fetching %s"%(filepath))
                     data[key] = parse_csv(filepath, val['headers'])
                 if 'z_label' in yf['labels']: 
                     labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]

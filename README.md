@@ -1,7 +1,7 @@
 # Simple CSV Grapher 
 **When running the following script make sure that your ```log/``` folder is at the same directory level as this script.**
 
-![Example Line Graph](./example_line.png)
+![Example Line Graph](./example_plots/line.png)
 
 ## Table of Contents
 - [Python3 Prerequistes](#python3-prerequistes)
@@ -18,8 +18,7 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a .png file based on a specified csv file. It only support one file at a time. 
 ```
-usage: CSV Graphing [-h] [-f FILE] [-p PATH] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE]
-                    [-t TITLE] [-a] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-f FILE] [-p PATH] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE] [-t TITLE] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
@@ -30,8 +29,7 @@ options:
   -c COLUMN_NAMES [COLUMN_NAMES ...], --column-names COLUMN_NAMES [COLUMN_NAMES ...]
                         Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter", "scatter3d",
-                        "scatterh", "hist", "stem"]
+                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]
   -t TITLE, --title TITLE
                         Provide title for generated graph.
   -s, --save            Save graph.
@@ -47,7 +45,7 @@ $ python3 CsvGrapher_v2.py -p "path/to/file" -f filename.csv -c header_1 header_
 Graphing multiple csv files requires the use of the yaml configuration method. To use this method run ```-y``` with the name of the yaml file (makes sure the yaml file is at the same level as this script). The following fields are used when writing a yaml file.
 - **```files```** is the keyword used to find all the files that will be used to generate a graph. 
 - **```path```** is the path to find the csv file from within the ```log/``` directory. If the file is directly in the ```log/``` directory put empty single quotes ```''``` in this field.
-- **```name```** is the name of the csv file being used. Using the keyword word ```latest``` will grab the last generated file. 
+- **```name```** is the csv filename. Using the keyword ```latest``` will grab the last generated file alphabetically. Using the keyword ```lastModified``` will grab the last modified file.  
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
 - **```labels```** correlates to the x, y and z labels (only supports one of each). The z label is option.  
 - **```title```** is the title of the generated graph. 
@@ -80,4 +78,4 @@ $ python3 CsvGrapher_v2.py -y example.yaml
 ``` 
 Example output:
 
-![Example Scatter Plot](./example_scatter.png)
+![Example Scatter Plot](./example_plots//scatter.png)
