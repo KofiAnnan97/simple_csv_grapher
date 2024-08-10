@@ -38,6 +38,39 @@ def parse_csv(filepath, col_names):
     
     return vals
 
+def plot(graph_type, title, labels, data, save_file):
+    if graph_type == 'line':
+        multi_2d_line(title,labels,data,save_file)
+    elif graph_type == 'line3d':
+        multi_3d_line(title,labels,data,save_file)
+    elif graph_type == 'scatter':
+        multi_scatter(title,labels,data,save_file)
+    elif graph_type == 'scatter3d':
+        multi_3d_scatter(title,labels,data,save_file)
+    elif graph_type =='scatterh':
+        multi_scatter_histogram(title,labels,data,save_file)
+    elif graph_type == "hist":
+         multi_histogram(title,labels,data,save_file)
+    elif graph_type == 'stem':
+        multi_stem(title,labels,data,save_file)
+    else:
+        print("Unrecognized graph type: %s"%(graph_type))
+        sys.exit(0)
+
+def save(title):
+    print(title)
+    import re
+    from datetime import datetime
+    graphs_path = os.path.join(log_path, 'graphs')
+    if not os.path.exists(graphs_path):
+        os.makedirs(graphs_path)
+    stamp = datetime.now().isoformat('_', timespec='seconds')
+    filename = '%s_%s'%(stamp, title)
+    filename = re.sub('\-|\:|\s+', '_', filename)
+    filepath = os.path.join(graphs_path, filename)
+    plt.savefig(filepath)
+    print("%s.png has been created."%(filepath))
+
 def multi_2d_line(graph_name, labels, data, save_file):
     fig, ax = plt.subplots()
     plt.title(graph_name)
@@ -50,7 +83,7 @@ def multi_2d_line(graph_name, labels, data, save_file):
         ax.plot(val[0], val[1], label=key)
     plt.legend()
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
 
@@ -70,7 +103,7 @@ def multi_3d_line(graph_name,labels, data, save_file):
     ax.set_autoscaley_on = True
     plt.legend()
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
 
@@ -86,7 +119,7 @@ def multi_scatter(graph_name, labels, data, save_file):
         ax.scatter(val[0], val[1], label=key)
     plt.legend()
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
     
@@ -103,7 +136,7 @@ def multi_3d_scatter(graph_name, labels, data, save_file):
         ax.scatter(val[0], val[1], val[2], label=key)
     plt.legend()
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
 
@@ -139,7 +172,7 @@ def multi_scatter_histogram(graph_name, labels, data, save_file):
         ax_histy.hist(val[1], bins=y_bins, orientation='horizontal')
     plt.legend()
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
 
@@ -160,7 +193,7 @@ def multi_histogram(graph_name, labels, data, save_file):
     plt.legend()  
 
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
 
@@ -180,23 +213,9 @@ def multi_stem(graph_name, labels, data, save_file):
     plt.legend()
 
     if save_file == True:
-        save_plot(graph_name)
+        save(graph_name)
     else:
         plt.show()
-
-def save_plot(title):
-    print(title)
-    import re
-    from datetime import datetime
-    graphs_path = os.path.join(log_path, 'graphs')
-    if not os.path.exists(graphs_path):
-        os.makedirs(graphs_path)
-    stamp = datetime.now().isoformat('_', timespec='seconds')
-    filename = '%s_%s'%(stamp, title)
-    filename = re.sub('\-|\:|\s+', '_', filename)
-    filepath = os.path.join(graphs_path, filename)
-    plt.savefig(filepath)
-    print("%s.png has been created."%(filepath))
 
 def main(argv=None):
     
@@ -239,31 +258,17 @@ def main(argv=None):
                         filepath = os.path.join(path, val['name'])
                     print("Fetching %s"%(filepath))
                     data[key] = parse_csv(filepath, val['headers'])
+
                 if 'z_label' in yf['labels']: 
                     labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
                 else:
                     labels = [yf['labels']['x_label'], yf['labels']['y_label']]
+
                 title = yf['title']
                 type = yf['type']
                 #is_animated = yf['animated']
                 save_graph = yf['save']
-                if type == 'line':
-                    multi_2d_line(title,labels,data,save_graph)
-                elif type == 'line3d':
-                    multi_3d_line(title,labels,data,save_graph)
-                elif type == 'scatter':
-                    multi_scatter(title,labels,data,save_graph)
-                elif type == 'scatter3d':
-                    multi_3d_scatter(title,labels,data,save_graph)
-                elif type =='scatterh':
-                    multi_scatter_histogram(title,labels,data,save_graph)
-                elif type == "hist":
-                    multi_histogram(title,labels,data,save_graph)
-                elif type == 'stem':
-                    multi_stem(title,labels,data,save_graph)
-                else:
-                    print("Unrecognized graph type: %s"%(type))
-                    sys.exit(0)
+                plot(graph_type=type, title=title, labels=labels, data=data, save_file=save_graph)
         except FileNotFoundError:
             print('%s does not exist.'%(filepath))
         except KeyError as k:
@@ -274,30 +279,13 @@ def main(argv=None):
         filename = args.file
         path_to_file = args.path if args.path is not None else ''
         filepath = os.path.join(log_path, path_to_file, filename)
+        
+        title = args.title if args.title is not None else filename[:-4]
         col_names = args.column_names
         graph_type = args.graph_type
-    
-        title = args.title if args.title is not None else filename[:-4]
-
         values = parse_csv(filepath, col_names)
-        data = {filename: values}
-        
-        if graph_type == 'line':
-            multi_2d_line(title,col_names,data,args.save)
-        elif graph_type == 'line3d':
-            multi_3d_line(title,col_names,data,args.save)
-        elif graph_type == 'scatter':
-            multi_scatter(title,col_names,data,args.save)
-        elif graph_type == 'scatter3d':
-            multi_3d_scatter(title,col_names,data,args.save)
-        elif graph_type =='scatterh':
-            multi_scatter_histogram(title,col_names,data,args.save)
-        elif graph_type == "hist":
-             multi_histogram(title,col_names,data,args.save)
-        elif graph_type == 'stem':
-            multi_stem(title,col_names,data,args.save)
-        else:
-            print("Unrecognized graph type: %s"%(graph_type))
+        data = {filename: values}        
+        plot(graph_type=graph_type, title=title, labels=col_names, data=data, save_file=args.save)
 
 if __name__ == "__main__":
     main()
