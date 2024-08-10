@@ -8,6 +8,8 @@
 - [Usage](#usage)
     - [Command line](#command-line)
     - [YAML Config File](#yaml-config-file)
+- [Animated Graphs](#animated-graphs)
+    - [Supported Graphs Types](#supported-graph-types)
 
 ## Python3 Prerequistes:
 ```bash
@@ -18,20 +20,23 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a .png file based on a specified csv file. It only support one file at a time. 
 ```
-usage: CSV Graphing [-h] [-f FILE] [-p PATH] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE] [-t TITLE] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_NAMES [COLUMN_NAMES ...]] [-g GRAPH_TYPE] [-t TITLE] [-a]
+                    [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
 options:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  Desired CSV file.
   -p PATH, --path PATH  Path to desired file (leave blank if parent directory is log/).
+  -f FILE, --file FILE  Desired CSV file.
   -c COLUMN_NAMES [COLUMN_NAMES ...], --column-names COLUMN_NAMES [COLUMN_NAMES ...]
                         Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]
+                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh",
+                        "hist", "stem"]
   -t TITLE, --title TITLE
                         Provide title for generated graph.
+  -a, --animated        Creates an animated graph when true (will be saved as a gif).
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
@@ -79,3 +84,23 @@ $ python3 CsvGrapher_v2.py -y example.yaml
 Example output:
 
 ![Example Scatter Plot](./example_plots//scatter.png)
+
+## Animated Graphs
+Both the command line and yaml configuration file can take advantage of animated graphs. When animation is enabled and a supported graph type is chosen a gif will be saved of the chosen data. Enabling animation will also disable the save command as a result and removes the legend which may make identification of data more difficult. 
+
+### Supported Graph Types:
+2D Line Graph
+
+![Animated 2D Line Graph](./example_plots//animated_2d_line.gif)
+
+3D Line Graph
+
+![Animated 3D Line Graph](./example_plots//animated_3D_line.gif)
+
+2D Scatter Plot
+
+![Animated 2D Scatter Plot](./example_plots//animated_2D_scatter.gif)
+
+3D Scatter Plot
+
+![Animated 3D Scatter Plot](./example_plots//animated_3D_scatter.gif)
