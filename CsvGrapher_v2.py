@@ -11,9 +11,13 @@ import matplotlib.animation as animation
 currentFolder = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(currentFolder, 'log')
 graphs_path = os.path.join(log_path, 'graphs')
+animated_path = os.path.join(graphs_path, 'animated')
 
 animated_data = dict()
 colors = dict()
+
+if not os.path.exists(animated_path):
+    os.makedirs(animated_path)
 
 ###################
 # General Methods #
@@ -40,7 +44,6 @@ def parse_csv(filepath, col_names):
                 for i in range(len(col_idxs)):
                     idx = col_idxs[i]
                     vals[i].append(float(row[idx]))
-
     except FileNotFoundError:
         print('%s does not exist. Check that path and filename.'%(filepath))
         sys.exit(0)
@@ -50,7 +53,6 @@ def parse_csv(filepath, col_names):
 def plot(graph_type, title, labels, data, is_animated, save_file):
     if is_animated == True:
         print('Generating an animated gif may take a while based on the amount of data.')
-    
     if graph_type == 'line':
         multi_2d_line(title,labels,data,is_animated,save_file)
     elif graph_type == 'line3d':
@@ -69,15 +71,16 @@ def plot(graph_type, title, labels, data, is_animated, save_file):
         print("Unrecognized graph type: %s"%(graph_type))
         sys.exit(0)
 
-def save(title):
+def create_filename(title):
     import re
     from datetime import datetime
-    #graphs_path = os.path.join(log_path, 'graphs')
-    if not os.path.exists(graphs_path):
-        os.makedirs(graphs_path)
     stamp = datetime.now().isoformat('_', timespec='seconds')
     filename = '%s_%s'%(stamp, title)
     filename = re.sub('\-|\:|\s+', '_', filename)
+    return filename
+
+def save(title):
+    filename = create_filename(title)
     filepath = os.path.join(graphs_path, filename)
     plt.savefig(filepath)
     print("%s.png has been created."%(filepath))
@@ -105,7 +108,7 @@ def color_init(data):
     return tmp
 
 def get_limits(data):
-    tmp, limits = [], []
+    tmp = []
     for val in list(data.values())[0]:
         tmp.append([float('inf'), -1*float('inf')])
     for val in data.values():
@@ -118,34 +121,35 @@ def get_limits(data):
         lim[1] = lim[1] + offset
     return tmp
 
-def update_2d_lines(i, ax, data, animated_data, colors):
-    for key, val in data.items():
-        for j in range(len(val)):
-            animated_data[key][j].append(val[j][i])  
-        lines = [ax.plot(x, y, color=colors[key],label=key) for x, y in animated_data.values()]
-    return lines
+def update_lines(i, ax, data, animated_data, colors, num_of_axes):
+    try:
+        for key, val in data.items():
+            for j in range(len(val)):
+                animated_data[key][j].append(val[j][i])  
+            if num_of_axes == 2:
+                lines = [ax.plot(x[:i], y[:i], c=colors[key]) for x, y in animated_data.values()]
+            elif num_of_axes == 3:
+                lines = [ax.plot(x[:i], y[:i], z[:i], c=colors[key]) for x, y, z in animated_data.values()]
+        return lines
+    except ValueError:
+        """print("The number of labels and/or headers do not match the chosen graph type.")
+        sys.exit()"""
+        pass
 
-def update_3d_lines(i, ax, data, animated_data, colors):
-    for key, val in data.items():
-        for j in range(len(val)):
-            animated_data[key][j].append(val[j][i])  
-        print(colors[key])
-        lines = [ax.plot(x, y, z, color=colors[key],label=key) for x, y, z in animated_data.values()]
-    return lines
-
-def update_2d_scatter(i, ax, data, animated_data, colors):
-    for key, val in data.items():
-        for j in range(len(val)):
-            animated_data[key][j].append(val[j][i])  
-        lines = [ax.scatter(x, y, color=colors[key],label=key) for x, y in animated_data.values()]
-    return lines
-
-def update_3d_scatter(i, ax, data, animated_data, colors):
-    for key, val in data.items():
-        for j in range(len(val)):
-            animated_data[key][j].append(val[j][i])  
-        lines = [ax.scatter(x, y, z, color=colors[key],label=key) for x, y,z in animated_data.values()]
-    return lines
+def update_scatter(i, ax, data, animated_data, colors, num_of_axes):
+    try:
+        for key, val in data.items():
+            for j in range(len(val)):
+                animated_data[key][j].append(val[j][i])
+            if num_of_axes == 2:  
+                lines = [ax.scatter(x[:i], y[:i], c=colors[key]) for x, y in animated_data.values()]
+            elif num_of_axes == 3:
+                lines = [ax.scatter(x[:i], y[:i], z[:i], c=colors[key]) for x, y,z in animated_data.values()]        
+        return lines
+    except ValueError:
+        """print("The number of labels and/or headers do not match the chosen graph type.")
+        sys.exit(0)"""
+        pass
 
 ####################
 # Graphing Methods #
@@ -161,17 +165,22 @@ def multi_2d_line(graph_name, labels, data, is_animated, save_file):
     if is_animated == True:
         animated_data = init(data)
         colors = color_init(data)
+
+        for key, val in data.items():
+            ax.plot(val[0][0], val[1][0], c=colors[key], label=key)
+        plt.legend()
+
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_2d_lines, len(data[first][0]),fargs= (ax, data, animated_data, colors), interval=100)
+        anim = animation.FuncAnimation(fig, update_lines, len(data[first][0]),fargs= (ax, data, animated_data, colors, 2), interval=100)
         writergif = animation.PillowWriter(fps=60)
-        filepath = os.path.join(graphs_path, "%s.gif"%(graph_name))
+        filename = create_filename(graph_name)
+        filepath = os.path.join(animated_path, "%s.gif"%(filename))
         anim.save(filepath, writer=writergif)
         print('%s saved.'%(filepath))
     else:
         for key, val in data.items():
             ax.plot(val[0], val[1], label=key)
             plt.legend()
-
         if save_file == True:
             save(graph_name)
         else:
@@ -182,30 +191,27 @@ def multi_3d_line(graph_name,labels, data, is_animated, save_file):
     ax = plt.axes(projection='3d')
     plt.title(graph_name)
 
-    ax.set_xlabel(labels[0])
-    ax.set_ylabel(labels[1])
-    ax.set_zlabel(labels[2])
     limits = get_limits(data)
-    ax.set_xlim(limits[0])
-    ax.set_ylim(limits[1])
-    ax.set_zlim(limits[2])
+    ax.set(xlim=limits[0], ylim=limits[1], zlim=limits[2], xlabel=labels[0], ylabel=labels[1], zlabel=labels[2])
 
     if is_animated == True:
         animated_data = init(data)
-        color_dict = color_init(data)
-        #print(color_dict)
+        colors = color_init(data)
+
+        for key, val in data.items():
+            ax.plot(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
+        plt.legend()
+
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_3d_lines, len(data[first][0]), fargs=(ax, data, animated_data, color_dict), interval=100)
+        anim = animation.FuncAnimation(fig, update_lines, len(data[first][0]), fargs=(ax, data, animated_data, colors, 3), interval=100)
         writergif = animation.PillowWriter(fps=60)
-        filepath = os.path.join(graphs_path, "%s.gif"%(graph_name))
+        filename = create_filename(graph_name)
+        filepath = os.path.join(animated_path, "%s.gif"%(filename))
         anim.save(filepath, writer=writergif)
         print('%s saved.'%(filepath))
     else:
         for key, val in data.items():
             ax.plot(val[0], val[1], val[2], label=key)
-        
-        ax.set_autoscalex_on = True
-        ax.set_autoscaley_on = True
         plt.legend()
         if save_file == True:
             save(graph_name)
@@ -221,11 +227,17 @@ def multi_scatter(graph_name, labels, data, is_animated, save_file):
 
     if is_animated == True:
         animated_data = init(data)
-        color_dict = color_init(data)
+        colors = color_init(data)
+
+        for key, val in data.items():
+            ax.scatter(val[0][0], val[1][0], c=colors[key], label=key)
+        plt.legend()
+
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_2d_scatter, len(data[first][0]), fargs=(ax, data, animated_data, color_dict), interval=100)
-        writergif = animation.PillowWriter(fps=60)
-        filepath = os.path.join(graphs_path, "%s.gif"%(graph_name))
+        anim = animation.FuncAnimation(fig, update_scatter, frames=len(data[first][0]), fargs=(ax, data, animated_data, colors, 2), interval=30)
+        writergif = animation.PillowWriter()#fps=15)
+        filename = create_filename(graph_name)
+        filepath = os.path.join(animated_path, "%s.gif"%(filename))
         anim.save(filepath, writer=writergif)
         print('%s saved.'%(filepath))
     else:
@@ -242,22 +254,22 @@ def multi_3d_scatter(graph_name, labels, data, is_animated, save_file):
     ax = plt.axes(projection='3d')
     plt.title(graph_name)
 
-    ax.set_xlabel(labels[0])
-    ax.set_ylabel(labels[1])
-    ax.set_zlabel(labels[2])
     limits = get_limits(data)
-    ax.set_xlim(limits[0])
-    ax.set_ylim(limits[1])
-    ax.set_zlim(limits[2])
+    ax.set(xlim=limits[0], ylim=limits[1], zlim=limits[2], xlabel=labels[0], ylabel=labels[1], zlabel=labels[2])
 
     if is_animated == True:
         animated_data = init(data)
-        color_dict = color_init(data)
-        #print(color_dict)
+        colors = color_init(data)
+
+        for key, val in data.items():
+            ax.scatter(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
+        plt.legend()
+
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_3d_scatter, len(data[first][0]), fargs=(ax, data, animated_data, color_dict), interval=100)
+        anim = animation.FuncAnimation(fig, update_scatter, len(data[first][0]), fargs=(ax, data, animated_data, colors, 3), interval=100)
         writergif = animation.PillowWriter(fps=60)
-        filepath = os.path.join(graphs_path, "%s.gif"%(graph_name))
+        filename = create_filename(graph_name)
+        filepath = os.path.join(animated_path, "%s.gif"%(filename))
         anim.save(filepath, writer=writergif)
         print('%s saved.'%(filepath))
     else:
@@ -392,11 +404,10 @@ def main(argv=None):
                     print("Fetching %s"%(filepath))
                     data[key] = parse_csv(filepath, val['headers'])
 
-                if 'z_label' in yf['labels']: 
+                if 'z_label' in yf['labels']:
                     labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
                 else:
                     labels = [yf['labels']['x_label'], yf['labels']['y_label']]
-
                 title = yf['title']
                 type = yf['type']
                 animated = yf['animated']
@@ -411,8 +422,7 @@ def main(argv=None):
     else:
         filename = args.file
         path_to_file = args.path if args.path is not None else ''
-        filepath = os.path.join(log_path, path_to_file, filename)
-        
+        filepath = os.path.join(log_path, path_to_file, filename) 
         title = args.title if args.title is not None else filename[:-4]
         col_names = args.column_names
         graph_type = args.graph_type
