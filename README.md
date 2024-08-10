@@ -10,6 +10,7 @@
     - [YAML Config File](#yaml-config-file)
 - [Animated Graphs](#animated-graphs)
     - [Supported Graphs Types](#supported-graph-types)
+- [Known Issues](#known-issues)
 
 ## Python3 Prerequistes:
 ```bash
@@ -86,7 +87,7 @@ Example output:
 ![Example Scatter Plot](./example_plots//scatter.png)
 
 ## Animated Graphs
-Both the command line and yaml configuration file can take advantage of animated graphs. When animation is enabled and a supported graph type is chosen a gif will be saved of the chosen data. Enabling animation will also disable the save command as a result and removes the legend which may make identification of data more difficult. 
+Both graphing methods: command line and yaml configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a gif in ```log\animated```. 
 
 ### Supported Graph Types:
 2D Line Graph
@@ -104,3 +105,7 @@ Both the command line and yaml configuration file can take advantage of animated
 3D Scatter Plot
 
 ![Animated 3D Scatter Plot](./example_plots//animated_3D_scatter.gif)
+
+## Known Issues:
+- If multiple plots are used in a graph, all of them will be the same color (animated graphs only). 
+- For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large gifs, while small files will result in quick, small gifs.
