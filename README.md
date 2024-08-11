@@ -110,4 +110,3 @@ Both graphing methods: command line and YAML configuration file can take advanta
 ## Known Issues:
 - If multiple plots are used in a graph, all of them will be the same color (animated graphs only). 
 - For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
-- Having more headers (3 or more) than necessary when generating a 2d graph can cause data to not be plotted (animated graphs only). 
