@@ -178,11 +178,11 @@ def multi_line(graph_name, labels, data, num_of_axes, is_animated, save_file):
         animated_data = init(data, num_of_axes)
         colors = color_init(data)
 
-        for key, val in data.items():
-            if num_of_axes == 2:
-                print(val)
+        if num_of_axes == 2:
+            for key, val in data.items():
                 ax.plot(val[0][0], val[1][0], c=colors[key], label=key)
-            elif num_of_axes == 3:
+        elif num_of_axes == 3:
+            for key, val in data.items():
                 ax.plot(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
         plt.legend()
 
@@ -224,10 +224,11 @@ def multi_scatter(graph_name, labels, data, num_of_axes, is_animated, save_file)
         animated_data = init(data, num_of_axes)
         colors = color_init(data)
 
-        for key, val in data.items():
-            if num_of_axes == 2:
+        if num_of_axes == 2:
+            for key, val in data.items():
                 ax.scatter(val[0][0], val[1][0], c=colors[key], label=key)
-            if num_of_axes == 3:
+        elif num_of_axes == 3:
+            for key, val in data.items():
                 ax.scatter(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
         plt.legend()
 
@@ -377,10 +378,10 @@ def main(argv=None):
                     labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
                 else:
                     labels = [yf['labels']['x_label'], yf['labels']['y_label']]
-                title = yf['title']
-                type = yf['type']
-                animated = yf['animated']
-                save_graph = yf['save']
+                title = yf['title'] if 'title' in yf.keys() else ''
+                type = yf['type'] if 'type' in yf.keys() else 'line'
+                animated = yf['animated'] if 'animated' in yf.keys() else False
+                save_graph = yf['save'] if 'save' in yf.keys() else False
                 plot(graph_type=type, title=title, labels=labels, data=data, is_animated=animated, save_file=save_graph)
         except FileNotFoundError:
             print('%s does not exist.'%(filepath))
