@@ -10,6 +10,8 @@
     - [YAML Config File](#yaml-config-file)
 - [Animated Graphs](#animated-graphs)
     - [Supported Graphs Types](#supported-graph-types)
+- [Live Data Streaming](#live-data-streaming)
+    - [Supported Graph Types](#supported-graph-types-1)
 - [Known Issues](#known-issues)
 
 ## Python3 Prerequistes:
@@ -21,8 +23,7 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a PNG file based on a specified CSV file. It only supports one file at a time. 
 ```
-usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]]
-                    [-g GRAPH_TYPE] [-t TITLE] [-a] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE] [-t TITLE] [-a] [-l] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
@@ -33,11 +34,11 @@ options:
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
                         Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter", "scatter3d",
-                        "scatterh", "hist", "stem"]
+                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
   -a, --animated        Creates an animated graph when true (will be saved as a gif).
+  -l, --live-view       Stream data from CSV files to Graph in real-time.
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
@@ -56,6 +57,8 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```labels```** correlates to the x, y, and z labels (only supports one of each). The z label is an option. 
 - **```title```** is the title of the generated graph. 
 - **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot.
+- **```animated```** is a boolean value that determines whether the graph is animated and saved (when true).
+- **```live```** is a boolean value that determines whether the graph is we generated using a continuous data stream for CSV files. The graph will be updated in real-time as new data is retrieved.
 - **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false).
 
 Here's an example of how a YAML file can be made.
@@ -90,23 +93,30 @@ Example output:
 ## Animated Graphs
 Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```log/animated/```. 
 
-### Supported Graph Types:
-2D Line Graph
+### Supported Graph Types
+*2D Line Graph*
 
 ![Animated 2D Line Graph](./example_plots//animated_2d_line.gif)
 
-3D Line Graph
+*3D Line Graph*
 
 ![Animated 3D Line Graph](./example_plots//animated_3D_line.gif)
 
-2D Scatter Plot
+*2D Scatter Plot*
 
 ![Animated 2D Scatter Plot](./example_plots//animated_2D_scatter.gif)
 
-3D Scatter Plot
+*3D Scatter Plot*
 
 ![Animated 3D Scatter Plot](./example_plots//animated_3D_scatter.gif)
 
-## Known Issues:
+## Live Data Streaming
+Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files.
+
+### Supported Graph Types
+*2D Line Graph*
+
+## Known Issues
 - If multiple plots are used in a graph, all of them will be the same color (animated graphs only). 
 - For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
+- Live Data Streaming does not currently support a legend for data streams.
