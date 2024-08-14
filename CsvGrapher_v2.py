@@ -69,7 +69,7 @@ def parse_csv(filepath, col_names):
 
 def plot(graph_type, title, labels, data, is_animated, save_file):
     if is_animated == True:
-        print('Generating an animated gif may take a while based on the amount of data.')
+        print('Generating an animated gif may take some time (based on the quantity of data).')
     if graph_type in ['line', 'line3d']:
         multi_line(title,labels,data,graph_type,is_animated,save_file)
     elif graph_type in ['scatter', 'scatter3d']:
@@ -132,23 +132,21 @@ def get_limits(data):
         lim[1] = lim[1] + offset
     return tmp
 
-def update_lines(i, ax, data, colors, num_of_axes):
+def animate(i, ax, data, graph_type, colors):
     try:
-        if num_of_axes == 2:
+        lines = None
+        if graph_type == 'line':
             lines = [ax.plot(val[0][:i], val[1][:i], label=key, c=colors[key]) for key, val in data.items()]
-        elif num_of_axes == 3:
-            lines = [ax.plot(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]
-        return lines
-    except Exception as e:
-        print(e)
-
-def update_scatter(i, ax, data, colors, num_of_axes):
-    try:
-        if num_of_axes == 2:  
+            return lines
+        elif graph_type == 'scatter':
             lines = [ax.scatter(val[0][:i], val[1][:i], label=key, c=colors[key]) for key, val in data.items()]
-        elif num_of_axes == 3:
-            lines = [ax.scatter(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]        
-        return lines
+            return lines
+        elif graph_type == 'line3d':
+            lines = [ax.plot(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]
+            return lines
+        elif graph_type == 'scatter3d':
+            lines = [ax.scatter(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]  
+            return lines
     except Exception as e:
         print(e)
 
@@ -156,7 +154,7 @@ def update_scatter(i, ax, data, colors, num_of_axes):
 # Live Processing Methods#
 ##########################
 
-def animate(i, ax, metadata, labels, title, colors):
+def update(i, ax, metadata, labels, title, colors):
     plt.title(title)
     ax.set(xlabel=labels[0], ylabel=labels[1])
     for j in range(len(metadata['filepaths'])):
@@ -182,8 +180,10 @@ def live_plot(graph_name, metadata, labels):
         ax.plot(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
     plt.legend()
     try:
-        anim = animation.FuncAnimation(fig, animate, fargs=(ax, metadata, labels, graph_name, colors), interval=100)
+        anim = animation.FuncAnimation(fig, update, fargs=(ax, metadata, labels, graph_name, colors), interval=100)
         plt.show()
+    except KeyboardInterrupt:
+        sys.exit(0)
     except Exception as e:
         print(e)
         sys.exit(0)
@@ -218,7 +218,7 @@ def multi_line(graph_name, labels, data, g_type, is_animated, save_file):
         plt.legend()
 
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_lines, frames=len(data[first][0]),fargs=(ax, data, colors, num_of_axes), interval=100)
+        anim = animation.FuncAnimation(fig, animate, frames=len(data[first][0]),fargs=(ax, data, g_type, colors), interval=100)
         save(graph_name, anim)
     else:
         if num_of_axes == 2:
@@ -260,7 +260,7 @@ def multi_scatter(graph_name, labels, data,type, is_animated, save_file):
         plt.legend()
 
         first = list(data.keys())[0]
-        anim = animation.FuncAnimation(fig, update_scatter, frames=len(data[first][0]), fargs=(ax, data, colors, num_of_axes), interval=30)
+        anim = animation.FuncAnimation(fig, animate, frames=len(data[first][0]), fargs=(ax, data, type, colors), interval=30)
         save(graph_name, anim)
     else:
         if num_of_axes == 2:
