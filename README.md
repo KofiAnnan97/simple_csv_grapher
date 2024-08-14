@@ -34,7 +34,7 @@ options:
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
                         Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]
+                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: 'line'.
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
   -a, --animated        Creates an animated graph when true (will be saved as a gif).
@@ -56,7 +56,7 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
 - **```labels```** correlates to the x, y, and z labels (only supports one of each). The z label is an option. 
 - **```title```** is the title of the generated graph. 
-- **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot.
+- **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot. If nothing is chosen the default is 'line'.
 - **```animated```** is a boolean value that determines whether the graph is animated and saved (when true).
 - **```live```** is a boolean value that determines whether the graph is we generated using a continuous data stream for CSV files. The graph will be updated in real-time as new data is retrieved.
 - **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false).
@@ -79,6 +79,7 @@ labels:
 title: Example Scatter Plot
 type: scatter
 animated: false
+live: false
 save: false
 ```
 
@@ -111,12 +112,11 @@ Both graphing methods: command line and YAML configuration file can take advanta
 ![Animated 3D Scatter Plot](./example_plots//animated_3D_scatter.gif)
 
 ## Live Data Streaming
-Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files.
+Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files. 
 
 ### Supported Graph Types
-*2D Line Graph*
+- *2D Line Graph* (looks similiar to animated plot above)
 
 ## Known Issues
-- If multiple plots are used in a graph, all of them will be the same color (animated graphs only). 
 - For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
-- Live Data Streaming does not currently support a legend for data streams.
+- Live View does not close the process after the window is closed.
