@@ -4,7 +4,7 @@
 ![Example Line Graph](./example_plots/line.png)
 
 ## Table of Contents
-- [Python3 Prerequistes](#python3-prerequistes)
+- [Requirements](#requirements)
 - [Usage](#usage)
     - [Command line](#command-line)
     - [YAML Config File](#yaml-config-file)
@@ -14,7 +14,14 @@
     - [Supported Graph Types](#supported-graph-types-1)
 - [Known Issues](#known-issues)
 
-## Python3 Prerequistes:
+## Requirements:
+ - Python 3.8 or newer
+ - Python Packages
+    - Matplotlib
+    - PyYaml
+    - Numpy
+
+Downloading python packages using pip:
 ```bash
 $ pip install matplotlib pyyaml numpy
 ```
