@@ -1,7 +1,7 @@
 # Simple CSV Grapher 
 **When running the following script, make sure that your ```log/``` folder is at the same directory level as this script.**
 
-![Example Line Graph](./example_plots/line.png)
+![Example Line Graph](./examples/images/line.png)
 
 ## Table of Contents
 - [Requirements](#requirements)
@@ -66,10 +66,9 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot. If nothing is chosen the default is 'line'.
 - **```animated```** is a boolean value that determines whether the graph is animated and saved (when true).
 - **```live```** is a boolean value that determines whether the graph is we generated using a continuous data stream for CSV files. The graph will be updated in real-time as new data is retrieved.
-- **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false).
+- **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false). The format of saved file for graphs is as follows ```YYYY_MM_DD_hh_mm_ss_Title.png```.
 
 Here's an example of how a YAML file can be made.
-
 ```yaml
 files:
   - file1:
@@ -83,11 +82,12 @@ files:
 labels:
   x_label: col1
   y_label: col2
+  z_label: col3
 title: Example Scatter Plot
 type: scatter
 animated: false
 live: false
-save: false
+save: true
 ```
 
 Here's an example of how to run the script with the yaml config file.
@@ -96,7 +96,7 @@ $ python3 CsvGrapher_v2.py -y example.yaml
 ``` 
 Example output:
 
-![Example Scatter Plot](./example_plots//scatter.png)
+![Example Scatter Plot](./examples/images/scatter.png)
 
 ## Animated Graphs
 Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```log/animated/```. 
@@ -104,25 +104,26 @@ Both graphing methods: command line and YAML configuration file can take advanta
 ### Supported Graph Types
 *2D Line Graph*
 
-![Animated 2D Line Graph](./example_plots//animated_2d_line.gif)
+![Animated 2D Line Graph](./examples/images/animated_line.gif)
 
 *3D Line Graph*
 
-![Animated 3D Line Graph](./example_plots//animated_3D_line.gif)
+![Animated 3D Line Graph](./examples/images/animated_line3d.gif)
 
 *2D Scatter Plot*
 
-![Animated 2D Scatter Plot](./example_plots//animated_2D_scatter.gif)
+![Animated 2D Scatter Plot](./examples/images/animated_scatter.gif)
 
 *3D Scatter Plot*
 
-![Animated 3D Scatter Plot](./example_plots//animated_3D_scatter.gif)
+![Animated 3D Scatter Plot](./examples/images/animated_scatter3d.gif)
 
 ## Live Data Streaming
 Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files. 
 
 ### Supported Graph Types
-- *2D Line Graph* (looks similiar to animated plot above)
+- *2D Line Graph* (looks similiar to animated line graph above)
+- *2D Scatter Plot* (looks similar to animated scatter plot above)
 
 ## Known Issues
 - For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
