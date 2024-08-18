@@ -103,9 +103,11 @@ def get_limits(data):
             tmp[i][0] = min(val[i]) if tmp[i][0] > min(val[i]) else tmp[i][0]
             tmp[i][1] = max(val[i]) if tmp[i][1] < max(val[i]) else tmp[i][1]
     for lim in tmp:
-        offset = 0.15*abs(lim[1] - lim[0])
+        diff = abs(lim[1] - lim[0])
+        offset = 0.15*diff if diff > 0 else 0.5
         lim[0] = lim[0] - offset
         lim[1] = lim[1] + offset
+
     return tmp
 
 def create_filename(title):
@@ -171,17 +173,20 @@ def animate_graph(fig, ax, graph_name, g_type, data):
 # Live Processing Methods#
 ##########################
 
-def update(i, ax, metadata, labels, title, colors):
+def update(i, ax, metadata, labels, title, colors, graph_type):
     plt.title(title)
     ax.set(xlabel=labels[0], ylabel=labels[1])
     lines = []
     for j in range(len(metadata['filepaths'])):
         filepath = metadata['filepaths'][j]
         data = parse_csv(filepath, metadata['headers'][j])
-        lines.append(ax.plot(data[0], data[1], label=metadata['names'], c=colors[filepath]))
+        if graph_type == 'line':
+            lines.append(ax.plot(data[0], data[1], label=metadata['names'], c=colors[filepath]))
+        elif graph_type == 'scatter':
+            lines.append(ax.scatter(data[0], data[1], label=metadata['names'], c=colors[filepath]))
     return lines
 
-def live_plot(graph_name, metadata, labels):
+def live_plot(graph_type, graph_name, metadata, labels):
     print("Live Viewing Data (graph should appear as a new window)...")
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
@@ -195,15 +200,18 @@ def live_plot(graph_name, metadata, labels):
     ax.set(xlabel=labels[0], ylabel=labels[1])
     for i in range(len(filepaths)):
         data = parse_csv(filepaths[i], headers[i])
-        ax.plot(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
+        if graph_type == 'line':
+            ax.plot(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
+        elif graph_type == 'scatter':
+            ax.scatter(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
     plt.legend()
     try:
-        anim = animation.FuncAnimation(fig, update, fargs=(ax, metadata, labels, graph_name, colors), interval=100)
+        anim = animation.FuncAnimation(fig, update, fargs=(ax, metadata, labels, graph_name, colors, graph_type), interval=100)
         plt.show()
     except KeyboardInterrupt:
         sys.exit(0)
     except Exception as e:
-        print(e)
+        print(e)        
         sys.exit(0)
 
 ####################
@@ -393,7 +401,7 @@ def main():
                 animated = yf['animated'] if 'animated' in yf.keys() else False
                 save_graph = yf['save'] if 'save' in yf.keys() else False
                 if is_live == True:
-                    live_plot(graph_name=title, metadata=data, labels=labels)
+                    live_plot(graph_type=type,graph_name=title, metadata=data, labels=labels)
                 else:
                     plot(graph_type=type, title=title, labels=labels, data=data, is_animated=animated, save_file=save_graph)
         except FileNotFoundError:
@@ -410,11 +418,11 @@ def main():
         graph_type = args.graph_type if args.graph_type is not None else 'line'
         if args.live_view == True:
             data = {'filepaths':[filepath], 'headers':[args.column_headers], 'names':[filename[:-4]]}
-            live_plot(graph_name=title, labels=args.column_headers, metadata=data)
+            live_plot(graph_type=graph_type,graph_name=title, labels=args.column_headers, metadata=data)
         else:
             values = parse_csv(filepath, args.column_headers)
             data = {filename: values}
-            plot(graph_type=graph_type, title=title, labels=args.column_headers, data=data, is_animated=args.animated, save_file=args.save)
+            plot(graph_type=graph_type, title=title, labels=args.column_headers, data=data, is_animated=args.animated, save_file=args.save) 
 
 if __name__ == "__main__":
     main()
