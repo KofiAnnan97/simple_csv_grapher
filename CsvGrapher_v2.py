@@ -151,17 +151,14 @@ def animate(i, ax, data, graph_type, colors):
 
 def animate_graph(fig, ax, graph_name, g_type, data):
     colors = color_dict(list(data.keys()))
-    if g_type == 'line':
-        for key, val in data.items():
+    for key, val in data.items():
+        if g_type == 'line':
             ax.plot(val[0][0], val[1][0], c=colors[key], label=key)
-    elif g_type == 'line3d':
-        for key, val in data.items():
+        elif g_type == 'line3d':
             ax.plot(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
-    elif g_type == 'scatter':
-        for key, val in data.items():
+        elif g_type == 'scatter':
             ax.scatter(val[0][0], val[1][0], c=colors[key], label=key)
-    elif g_type == 'scatter3d':
-        for key, val in data.items():
+        elif g_type == 'scatter3d':
             ax.scatter(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
     plt.legend()
     first = list(data.keys())[0]
@@ -236,11 +233,10 @@ def multi_line(graph_name, labels, data, g_type, is_animated, save_file):
     if is_animated == True:
         animate_graph(fig=fig,ax=ax,graph_name=graph_name, g_type=g_type, data=data)
     else:
-        if num_of_axes == 2:
-            for key, val in data.items():
+        for key, val in data.items():
+            if num_of_axes == 2:
                 ax.plot(val[0], val[1], label=key)
-        elif num_of_axes == 3:
-            for key, val in data.items():
+            elif num_of_axes == 3:
                 ax.plot(val[0], val[1], val[2], label=key)
         plt.legend()
         if save_file == True:
@@ -266,11 +262,10 @@ def multi_scatter(graph_name, labels, data, g_type, is_animated, save_file):
     if is_animated == True:
         animate_graph(fig=fig,ax=ax,graph_name=graph_name, g_type=g_type, data=data)
     else:
-        if num_of_axes == 2:
-            for key, val in data.items():
+        for key, val in data.items():
+            if num_of_axes == 2:
                 ax.scatter(val[0], val[1], label=key)
-        elif num_of_axes == 3:
-            for key, val in data.items():
+            elif num_of_axes == 3:
                 ax.scatter(val[0], val[1], val[2], label=key)
         plt.legend()
         if save_file == True:
@@ -371,7 +366,10 @@ def main():
         import yaml
         data = dict()
         try:
-            filepath = os.path.join(currentFolder, args.yaml)
+            if args.yaml[-5:] != '.yaml':
+                filepath = os.path.join(currentFolder, "%s.yaml"%(args.yaml))
+            else:
+                filepath = os.path.join(currentFolder, args.yaml)
             with open(filepath, 'r') as f:
                 yf = yaml.safe_load(f)
                 is_live = yf['live'] if 'live' in yf.keys() else False

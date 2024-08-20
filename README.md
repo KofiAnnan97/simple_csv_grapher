@@ -90,10 +90,11 @@ live: false
 save: true
 ```
 
-Here's an example of how to run the script with the yaml config file.
+Here's an example of how to run the script with the yaml config file. The ```.yaml``` extension does not need to included for the command to work.
 ```bash
 $ python3 CsvGrapher_v2.py -y example.yaml
-``` 
+```  
+
 Example output:
 
 ![Example Scatter Plot](./examples/images/scatter.png)
@@ -118,7 +119,7 @@ Both graphing methods: command line and YAML configuration file can take advanta
 
 ![Animated 3D Scatter Plot](./examples/images/animated_scatter3d.gif)
 
-## Live Data Streaming
+## Live View
 Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files. 
 
 ### Supported Graph Types
@@ -127,4 +128,4 @@ Both graphing methods: command line and YAML configuration file can take advanta
 
 ## Known Issues
 - For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
-- Live View does not close the process after the window is closed.
+- Live View may not close after the window has been exited.
