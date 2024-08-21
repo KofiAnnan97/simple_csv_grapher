@@ -7,6 +7,7 @@ import glob
 import numpy as np
 import random
 import matplotlib.animation as animation
+from math import floor
 
 currentFolder = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(currentFolder, 'log')
@@ -40,11 +41,14 @@ def get_file(path, filename):
         filepath = os.path.join(path, filename)
     return filepath
 
-def get_col_idxs(col_names, header):
+def get_col_idxs(col_names, headers):
     tmp = []
     for col in col_names:
-        idx = header.index(col)
-        tmp.append(idx)
+        try:
+            idx = headers.index(col)
+            tmp.append(idx)
+        except ValueError:
+            raise ValueError('Column header \'%s\' is not in the csv file.'%(col))
     return tmp
 
 def parse_csv(filepath, col_names):
@@ -52,8 +56,8 @@ def parse_csv(filepath, col_names):
     try:
         with open(filepath, 'r') as cr:
             reader = csv.reader(cr)
-            header = next(reader)
-            col_idxs = get_col_idxs(col_names, header)
+            headers = next(reader)
+            col_idxs = get_col_idxs(col_names, headers)
 
             for i in range(len(col_idxs)):
                 vals.append(list())
@@ -62,9 +66,11 @@ def parse_csv(filepath, col_names):
                     idx = col_idxs[i]
                     vals[i].append(float(row[idx]))
     except FileNotFoundError:
-        print('%s does not exist. Check that path and filename.'%(filepath))
-        sys.exit(0)
-    
+        raise FileNotFoundError('%s does not exist. Check that path and filename.'%(filepath))
+    except StopIteration:
+        raise StopIteration('%s is empty.'%(filepath))
+    if len(vals[0]) == 0:
+        raise Exception('%s has no data.'%(filepath))
     return vals
 
 def plot(graph_type, title, labels, data, is_animated, save_file):
@@ -134,18 +140,18 @@ def save(title, anim=None):
 # Animated Methods #
 ####################
 
-def animate(i, ax, data, graph_type, colors):
+def animate(i, ax, data, idx_size, graph_type, colors):
     try:
         lines = None
         if graph_type == 'line':
-            lines = [ax.plot(val[0][:i], val[1][:i], label=key, c=colors[key]) for key, val in data.items()]
+            lines = [ax.plot(val[0][:i*idx_size], val[1][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
         elif graph_type == 'scatter':
-            lines = [ax.scatter(val[0][:i], val[1][:i], label=key, c=colors[key]) for key, val in data.items()]
+            lines = [ax.scatter(val[0][:i*idx_size], val[1][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
         elif graph_type == 'line3d':
-            lines = [ax.plot(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]
+            lines = [ax.plot(val[0][:i*idx_size], val[1][:i*idx_size], val[2][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
         elif graph_type == 'scatter3d':
-            lines = [ax.scatter(val[0][:i], val[1][:i], val[2][:i], label=key, c=colors[key]) for key, val in data.items()]  
-        return lines
+            lines = [ax.scatter(val[0][:i*idx_size], val[1][:i*idx_size], val[2][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]  
+        return lines,
     except Exception as e:
         print(e)
 
@@ -162,7 +168,10 @@ def animate_graph(fig, ax, graph_name, g_type, data):
             ax.scatter(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
     plt.legend()
     first = list(data.keys())[0]
-    anim = animation.FuncAnimation(fig, animate, frames=len(data[first][0]),fargs=(ax, data, g_type, colors), interval=100)
+    data_length = len(data[first][0])
+    index_size = floor(0.0067 * data_length) if floor(0.0067 * data_length) >= 1 else 1 
+    frame_size = data_length//index_size
+    anim = animation.FuncAnimation(fig, animate, frames=frame_size,fargs=(ax, data, index_size, g_type, colors), interval=1, repeat=False)
     save(graph_name, anim)
 
 
@@ -355,8 +364,8 @@ def main():
     parser.add_argument('-c', '--column-headers', action='extend', nargs='+', type=str, help='Give desired column headers (leave spaces between each header).')
     parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: \'line\'.', default="line")
     parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for the generated graph.')
-    parser.add_argument('-a', '--animated', action='store_true', help='Creates an animated graph when true (will be saved as a gif).')
     parser.add_argument('-l', '--live-view', action='store_true', help='Stream data from CSV files to Graph in real-time.')
+    parser.add_argument('-a', '--animated', action='store_true', help='Creates an animated graph when true (will be saved as a gif).')
     parser.add_argument('-s', '--save', action='store_true', help='Save graph.')
     parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml config file.')
 
@@ -403,7 +412,7 @@ def main():
                 else:
                     plot(graph_type=type, title=title, labels=labels, data=data, is_animated=animated, save_file=save_graph)
         except FileNotFoundError:
-            print('%s does not exist.'%(filepath))
+            print('YAML file: %s does not exist.'%(filepath))
         except KeyError as k:
             print("KeyError: %s"%(k))
         except TypeError as t:

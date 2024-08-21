@@ -6,12 +6,12 @@
 ## Table of Contents
 - [Requirements](#requirements)
 - [Usage](#usage)
-    - [Command line](#command-line)
-    - [YAML Config File](#yaml-config-file)
+  - [Command line](#command-line)
+  - [YAML Config File](#yaml-config-file)
 - [Animated Graphs](#animated-graphs)
-    - [Supported Graphs Types](#supported-graph-types)
-- [Live Data Streaming](#live-data-streaming)
-    - [Supported Graph Types](#supported-graph-types-1)
+  - [Supported Graphs Types](#supported-graph-types)
+- [Live View](#live-view)
+  - [Supported Graph Types](#supported-graph-types-1)
 - [Known Issues](#known-issues)
 
 ## Requirements:
@@ -30,22 +30,29 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a PNG file based on a specified CSV file. It only supports one file at a time. 
 ```
-usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE] [-t TITLE] [-a] [-l] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-p PATH] [-f FILE]
+                    [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE]
+                    [-t TITLE] [-l] [-a] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
 options:
   -h, --help            show this help message and exit
-  -p PATH, --path PATH  Path to desired file (leave blank if parent directory is log/).
+  -p PATH, --path PATH  Path to desired file (leave blank if parent
+                        directory is log/).
   -f FILE, --file FILE  Desired CSV file.
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
-                        Give desired column headers (leave spaces between each header).
+                        Give desired column headers (leave spaces between
+                        each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: 'line'.
+                        Choose one of the following ["line", "line3d",
+                        "scatter", "scatter3d", "scatterh", "hist", "stem"].
+                        Default: 'line'.
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
-  -a, --animated        Creates an animated graph when true (will be saved as a gif).
   -l, --live-view       Stream data from CSV files to Graph in real-time.
+  -a, --animated        Creates an animated graph when true (will be saved
+                        as a gif).
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
@@ -127,5 +134,4 @@ Both graphing methods: command line and YAML configuration file can take advanta
 - *2D Scatter Plot* (looks similar to animated scatter plot above)
 
 ## Known Issues
-- For animated graphs, the speed of animation does not scale to the size of the data. Therefore, larger files will result in slow, large GIFs, while small files will result in quick, small GIFs.
 - Live View may not close after the window has been exited.
