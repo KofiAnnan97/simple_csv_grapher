@@ -13,6 +13,6 @@ labels:
   z_label: Z
 title: "Animated Scatter Plot"
 type: scatter3d
-live: False
+live: false
 animated: true
 save: false

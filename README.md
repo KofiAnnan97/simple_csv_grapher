@@ -56,11 +56,11 @@ options:
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
-Go to ``` python3 CsvGrapher_v2.py -h``` for an up-to-date description on how to use the command line. 
+Go to ``` python3 CsvGrapher.py -h``` for an up-to-date description on how to use the command line. 
 
 Here's an example of how to use the command line.
 ```bash
-$ python3 CsvGrapher_v2.py -p "path/to/file" -f filename.csv -c header_1 header_2 -g "line" -t "Example Line Graph" -s
+$ python3 CsvGrapher.py -p "path/to/file" -f filename.csv -c header_1 header_2 -g "line" -t "Example Line Graph" -s
 ```
 ### YAML Config File
 Graphing multiple CSV files requires the use of the yaml configuration method. To use this method, run ```-y``` with the name of the yaml file (makes sure the yaml file is at the same level as this script). The following fields are used when writing a yaml file.
@@ -99,7 +99,7 @@ save: true
 
 Here's an example of how to run the script with the yaml config file. The ```.yaml``` extension does not need to included for the command to work.
 ```bash
-$ python3 CsvGrapher_v2.py -y example.yaml
+$ python3 CsvGrapher.py -y example.yaml
 ```  
 
 Example output:

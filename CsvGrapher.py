@@ -3,210 +3,433 @@ import argparse
 import matplotlib.pyplot as plt
 import csv
 import sys
+import glob
+import numpy as np
+import random
+import matplotlib.animation as animation
+from math import floor
 
 currentFolder = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(currentFolder, 'log')
+graphs_path = os.path.join(log_path, 'graphs')
+animated_path = os.path.join(graphs_path, 'animated')
 
-class CsvParser:
-    def __init__(self):
-        self.data = dict()
-        self.xy_labels = ['x', 'y']
-        self.title = 'test'
-        self.graph_type = 'line' #'' 
-        self.methods = GraphingMethods()
+if not os.path.exists(animated_path):
+    os.makedirs(animated_path)
 
-    def get_col_idxs(self, col_names, header):
-        tmp = []
-        for col in col_names:
-            idx = header.index(col)
+graph_axes = {'line': 2,
+              'line3d': 3, 
+              'scatter': 2,
+              'scatter3d': 3,
+              'scatterh': 2,
+              'hist': 2,
+              'stem': 2}
+
+###################
+# General Methods #
+###################
+
+def get_file(path, filename):
+    if filename == 'latest':
+        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+        list_of_files.sort()
+        filepath = max(list_of_files)
+    elif filename == 'lastModified':
+        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+        filepath = max(list_of_files, key=os.path.getmtime)
+    else:
+        filepath = os.path.join(path, filename)
+    return filepath
+
+def get_col_idxs(col_names, headers):
+    tmp = []
+    for col in col_names:
+        try:
+            idx = headers.index(col)
             tmp.append(idx)
-        return tmp
+        except ValueError:
+            raise ValueError('Column header \'%s\' is not in the csv file.'%(col))
+    return tmp
 
-    def parse_csv(self, filepath, col_names):
+def parse_csv(filepath, col_names):
+    vals = []
+    try:
         with open(filepath, 'r') as cr:
             reader = csv.reader(cr)
-            header = next(reader)
-            col_idxs = self.get_col_idxs(col_names, header)
+            headers = next(reader)
+            col_idxs = get_col_idxs(col_names, headers)
 
-            vals = []
             for i in range(len(col_idxs)):
                 vals.append(list())
-            try:
-                for row in reader:
-                    for i in range(len(col_idxs)):
-                        idx = col_idxs[i]
-                        vals[i].append(float(row[idx]))
-            except Exception as e:
-                print(e)
-            return vals
-    
-    def cli_menu(self,choice):
-        if choice == '1':
-            filename = input('CSV Filename: ')
-            filepath = os.path.join(log_path, filename)
-            headers = input('Give desired column headers (separated by spaces): ')
-            col_names = headers.split(' ')
-            self.data[filename] = self.parse_csv(filepath, col_names)
-            print(list(self.data.keys()))
-        elif choice == '2':
-            print("Current data:", list(self.data.keys()))
-            file = input("Remove one of the following csv files: ")
-            try:
-                del self.data[file]
-            except KeyError:
-                print("Could not find data for: %s"%(file))
-        elif choice == '3':
-            x_label = input("X Label: ")
-            y_label = input("Y Label: ")
-            self.xy_labels = [x_label, y_label]
-        elif choice == '4':
-            self.title = input('Set Title: ')
-        elif choice == '5':
-            type = input('Choose one of the following ["line", "scatter"]: ')
-            if type == "line":
-                self.graph_type = type
-            elif type == "scatter":
-                self.graph_type = type
-            print('Current Graph Type: %s'%(self.graph_type))
-        elif choice == '6':
-            save_input = input("Save graph as file (y/n): ")
-            save_file = True if save_input == 'y' else False
-            if self.graph_type == "line":
-                self.methods.multi_2d_plot(self.title, self.xy_labels, self.data, save_file)
-            elif self.graph_type == "scatter":
-                self.methods.multi_scatter(self.title, self.xy_labels, self.data, save_file)
-            else:
-                print("Unrecognized graph type: %s"%(self.graph_type))
-        elif choice == '7':
-            sys.exit(0)
-        else:
-            print("Invalid option: %s"%(choice))
+            for row in reader:
+                for i in range(len(col_idxs)):
+                    idx = col_idxs[i]
+                    vals[i].append(float(row[idx]))
+    except FileNotFoundError:
+        raise FileNotFoundError('%s does not exist. Check that path and filename.'%(filepath))
+    except StopIteration:
+        raise StopIteration('%s is empty.'%(filepath))
+    if len(vals[0]) == 0:
+        raise Exception('%s has no data.'%(filepath))
+    return vals
 
-"""def convert_gps_to_xy(file, values):
-    import utm
+def plot(graph_type, title, labels, data, is_animated, save_file):
+    if is_animated == True:
+        print('Generating an animated gif may take some time (based on the quantity of data).')
+    if graph_type in ['line', 'line3d']:
+        multi_line(title,labels,data,graph_type,is_animated,save_file)
+    elif graph_type in ['scatter', 'scatter3d']:
+        multi_scatter(title,labels,data,graph_type,is_animated,save_file)
+    elif graph_type =='scatterh':
+        multi_scatter_histogram(title,labels,data,save_file)
+    elif graph_type == "hist":
+         multi_histogram(title,labels,data,save_file)
+    elif graph_type == 'stem':
+        multi_stem(title,labels,data,save_file)
+    else:
+        print("Unrecognized graph type: %s"%(graph_type))
+        sys.exit(0)
+
+def color_dict(data):
+    tmp = dict()
+    for key in data:
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+        hexcolor = '#%02x%02x%02x'%(r, g, b)
+        tmp[key] = hexcolor
+    return tmp
+
+def get_limits(data):
     tmp = []
-    for i in range(len(values)):
-        tmp.append(list())
-    for j in range(len(values[0])):
-        data = utm.from_latlon(values[0][j], values[1][j])
-        tmp[0].append(data[0])
-        tmp[1].append(data[1])
-    filename = 'xyz' + file[3:]
-    filepath = os.path.join(log_path, filename)
-    with open(filepath, 'w') as cw:
-        writer = csv.writer(cw, delimiter=',')
-        writer.writerow(["x","y"])
-        #print(tmp)
-        for k in range(len(tmp[0])):
-            writer.writerow([tmp[0][k], tmp[1][k]])"""
+    for val in list(data.values())[0]:
+        tmp.append([float('inf'), -1*float('inf')])
+    for val in data.values():
+        for i in range(len(val)):
+            tmp[i][0] = min(val[i]) if tmp[i][0] > min(val[i]) else tmp[i][0]
+            tmp[i][1] = max(val[i]) if tmp[i][1] < max(val[i]) else tmp[i][1]
+    for lim in tmp:
+        diff = abs(lim[1] - lim[0])
+        offset = 0.15*diff if diff > 0 else 0.5
+        lim[0] = lim[0] - offset
+        lim[1] = lim[1] + offset
 
-class GraphingMethods:
-    def __init__(self):
-        pass
+    return tmp
 
-    def simple_2d_plot(self, graph_name, labels, x, y):
-        fig, ax = plt.subplots()
-        plt.title(graph_name)
-        
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-        ax.plot(x, y)
-        plt.show()
+def create_filename(title):
+    import re
+    from datetime import datetime
+    stamp = datetime.now().isoformat('_', timespec='seconds')
+    filename = '%s_%s'%(stamp, title)
+    filename = re.sub('\-|\:|\s+', '_', filename)
+    return filename
 
-    def multi_2d_plot(self, graph_name, labels, data, save_file):
-        fig, ax = plt.subplots()
-        plt.title(graph_name)
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-
-        for key, val in data.items():
-            ax.plot(val[0], val[1], label=key)
-        plt.legend()
-        if save_file == True:
-            self.save_plot(graph_name)
-        else:
-            plt.show()
-
-    def simple_scatter(self, graph_name, labels, x, y):
-        fig, ax = plt.subplots()
-        plt.title(graph_name)
-
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-        ax.scatter(x, y)
-        plt.show()
-
-    def multi_scatter(self, graph_name, labels, data, save_file):
-        fig, ax = plt.subplots()
-        plt.title(graph_name)
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-
-        for key, val in data.items():
-            ax.scatter(val[0], val[1], label=key)
-        plt.legend()
-        if save_file == True:
-            self.save_plot(graph_name)
-        else:
-            plt.show()
-
-    def save_plot(self, title):
-        import re
-        from datetime import datetime
-        graphs_path = os.path.join(log_path, 'graphs')
-        if not os.path.exists(graphs_path):
-            os.makedirs(graphs_path)
-        stamp = datetime.now().isoformat('_', timespec='seconds')
-        filename = '%s_%s'%(stamp, title)
-        filename = re.sub(r'\s+', '_', filename)
-        filename = re.sub(r':', '_', filename)
-        filename = re.sub(r'-', '_', filename)
+def save(title, anim=None):
+    filename = create_filename(title)
+    if anim is not  None:
+        writergif = animation.PillowWriter(fps=60)
+        filepath = os.path.join(animated_path, "%s.gif"%(filename))
+        anim.save(filepath, writer=writergif)
+        print('%s saved.'%(filepath))
+    else:
         filepath = os.path.join(graphs_path, filename)
         plt.savefig(filepath)
         print("%s.png has been created."%(filepath))
 
-def main(argv=None):
-    
-    parser = argparse.ArgumentParser(prog='CSV Graphing', description='Simple program that graphs csv data.')
-    parser.add_argument('-f', '--file', action='store', type=str, help='Choose file')
-    parser.add_argument('-c', '--column-names', action='extend', nargs='+', type=str, help='Give desired column headers.')
-    parser.add_argument('-m', '--menu', action='store_true', help="Bring up command line menu")
-    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "scatter"]', default="line")
+####################
+# Animated Methods #
+####################
+
+def animate(i, ax, data, idx_size, graph_type, colors):
+    try:
+        lines = None
+        if graph_type == 'line':
+            lines = [ax.plot(val[0][:i*idx_size], val[1][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
+        elif graph_type == 'scatter':
+            lines = [ax.scatter(val[0][:i*idx_size], val[1][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
+        elif graph_type == 'line3d':
+            lines = [ax.plot(val[0][:i*idx_size], val[1][:i*idx_size], val[2][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]
+        elif graph_type == 'scatter3d':
+            lines = [ax.scatter(val[0][:i*idx_size], val[1][:i*idx_size], val[2][:i*idx_size], label=key, c=colors[key]) for key, val in data.items()]  
+        return lines,
+    except Exception as e:
+        print(e)
+
+def animate_graph(fig, ax, graph_name, g_type, data):
+    colors = color_dict(list(data.keys()))
+    for key, val in data.items():
+        if g_type == 'line':
+            ax.plot(val[0][0], val[1][0], c=colors[key], label=key)
+        elif g_type == 'line3d':
+            ax.plot(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
+        elif g_type == 'scatter':
+            ax.scatter(val[0][0], val[1][0], c=colors[key], label=key)
+        elif g_type == 'scatter3d':
+            ax.scatter(val[0][0], val[1][0], val[2][0], c=colors[key], label=key)
+    plt.legend()
+    first = list(data.keys())[0]
+    data_length = len(data[first][0])
+    index_size = floor(0.0067 * data_length) if floor(0.0067 * data_length) >= 1 else 1 
+    frame_size = data_length//index_size
+    anim = animation.FuncAnimation(fig, animate, frames=frame_size,fargs=(ax, data, index_size, g_type, colors), interval=1, repeat=False)
+    save(graph_name, anim)
+
+
+##########################
+# Live Processing Methods#
+##########################
+
+def update(i, ax, metadata, labels, title, colors, graph_type):
+    plt.title(title)
+    ax.set(xlabel=labels[0], ylabel=labels[1])
+    lines = []
+    for j in range(len(metadata['filepaths'])):
+        filepath = metadata['filepaths'][j]
+        data = parse_csv(filepath, metadata['headers'][j])
+        if graph_type == 'line':
+            lines.append(ax.plot(data[0], data[1], label=metadata['names'], c=colors[filepath]))
+        elif graph_type == 'scatter':
+            lines.append(ax.scatter(data[0], data[1], label=metadata['names'], c=colors[filepath]))
+    return lines
+
+def live_plot(graph_type, graph_name, metadata, labels):
+    print("Live Viewing Data (graph should appear as a new window)...")
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.title(graph_name)
+
+    filepaths = metadata['filepaths']
+    headers = metadata['headers']
+    names = metadata['names']
+
+    colors = color_dict(filepaths)
+    ax.set(xlabel=labels[0], ylabel=labels[1])
+    for i in range(len(filepaths)):
+        data = parse_csv(filepaths[i], headers[i])
+        if graph_type == 'line':
+            ax.plot(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
+        elif graph_type == 'scatter':
+            ax.scatter(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
+    plt.legend()
+    try:
+        anim = animation.FuncAnimation(fig, update, fargs=(ax, metadata, labels, graph_name, colors, graph_type), interval=100)
+        plt.show()
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception as e:
+        print(e)        
+        sys.exit(0)
+
+####################
+# Graphing Methods #
+####################
+
+def multi_line(graph_name, labels, data, g_type, is_animated, save_file):
+    num_of_axes = graph_axes[g_type]
+    fig = plt.figure()
+    if num_of_axes == 2:
+        ax = fig.add_subplot(1, 1, 1)
+    elif num_of_axes == 3:
+        ax = plt.axes(projection='3d')
+    plt.title(graph_name)
+
+    limits = get_limits(data)
+    if num_of_axes == 2:
+        ax.set(xlim=limits[0], ylim=limits[1], xlabel=labels[0], ylabel=labels[1])
+    elif num_of_axes == 3:
+        ax.set(xlim=limits[0], ylim=limits[1], zlim=limits[2], xlabel=labels[0], ylabel=labels[1], zlabel=labels[2])
+
+    if is_animated == True:
+        animate_graph(fig=fig,ax=ax,graph_name=graph_name, g_type=g_type, data=data)
+    else:
+        for key, val in data.items():
+            if num_of_axes == 2:
+                ax.plot(val[0], val[1], label=key)
+            elif num_of_axes == 3:
+                ax.plot(val[0], val[1], val[2], label=key)
+        plt.legend()
+        if save_file == True:
+            save(graph_name)
+        else:
+            plt.show()
+
+def multi_scatter(graph_name, labels, data, g_type, is_animated, save_file):
+    num_of_axes = graph_axes[g_type]
+    fig = plt.figure() 
+    if num_of_axes == 2:
+        ax = fig.add_subplot(1, 1, 1)
+    elif num_of_axes == 3:
+        ax = plt.axes(projection='3d')
+    plt.title(graph_name)
+
+    limits = get_limits(data)
+    if num_of_axes == 2:
+        ax.set(xlim=limits[0], ylim=limits[1], xlabel=labels[0], ylabel=labels[1])
+    elif num_of_axes == 3:
+        ax.set(xlim=limits[0], ylim=limits[1], zlim=limits[2], xlabel=labels[0], ylabel=labels[1], zlabel=labels[2])
+
+    if is_animated == True:
+        animate_graph(fig=fig,ax=ax,graph_name=graph_name, g_type=g_type, data=data)
+    else:
+        for key, val in data.items():
+            if num_of_axes == 2:
+                ax.scatter(val[0], val[1], label=key)
+            elif num_of_axes == 3:
+                ax.scatter(val[0], val[1], val[2], label=key)
+        plt.legend()
+        if save_file == True:
+            save(graph_name)
+        else:
+            plt.show()
+
+def multi_scatter_histogram(graph_name, labels, data, save_file):
+    print("This figure may take a while to complete based on the size of data.")
+    fig = plt.figure(figsize=(6, 6))
+    gs = fig.add_gridspec(2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
+                      left=0.15, right=0.9, bottom=0.1, top=0.9,
+                      wspace=0.05, hspace=0.05)
+    ax = fig.add_subplot(gs[1, 0])
+    ax_histx = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
+    ax_histy = ax.inset_axes([1.05, 0, 0.25, 1], sharey=ax)
+    ax.set(xlabel=labels[0], ylabel=labels[1])
+    ax_histx.tick_params(axis="x", labelbottom=False)
+    ax_histy.tick_params(axis="y", labelleft=False)
+    fig.suptitle(graph_name)
+
+    limits = get_limits(data)
+    xmin, xmax = limits[0]
+    ymin, ymax = limits[1]
+    x_binwidth = (xmax - xmin)/20.0
+    y_binwidth = (ymax - ymin)/20.0
+
+    x_bins = np.arange(xmin, xmax + x_binwidth, x_binwidth)
+    y_bins = np.arange(ymin, ymax + y_binwidth, y_binwidth)
+
+    for key, val in data.items():
+        ax.scatter(val[0], val[1], label=key)
+        ax_histx.hist(val[0], bins=x_bins)
+        ax_histy.hist(val[1], bins=y_bins, orientation='horizontal')
+
+    plt.legend()
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+
+def multi_histogram(graph_name, labels, data, save_file):
+    n_bins = 20
+
+    fig, axs = plt.subplots(1, 2, sharey=True)
+    fig.suptitle(graph_name)
+    for key, val in data.items():
+        axs[0].hist(val[0], bins=n_bins, label=key)
+        axs[1].hist(val[1], bins=n_bins, label=key)
+
+    axs[0].set_xlabel(labels[0])
+    axs[1].set_xlabel(labels[1])
+    axs[0].autoscale(enable=True, axis='both')
+    axs[1].autoscale(enable=True, axis='both') 
+    plt.legend()  
+
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+
+def multi_stem(graph_name, labels, data, save_file):
+    fig, ax = plt.subplots()
+    plt.title(graph_name)
+
+    ax.set(xlabel=labels[0], ylabel=labels[1])
+    ax.autoscale(enable=True, axis='both')
+
+    colors = color_dict(list(data.keys()))
+    for key, val in data.items():
+        ax.stem(val[0], val[1], label=key, linefmt=colors[key], markerfmt='D')
+    plt.legend()
+
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+
+################
+# Main Program #
+################
+
+def main():
+    parser = argparse.ArgumentParser(prog='CSV Graphing', description='A simple program that graphs data from csv files.')
+    parser.add_argument('-p', '--path', action='store', type=str, help='Path to desired file (leave blank if parent directory is log/).')
+    parser.add_argument('-f', '--file', action='store', type=str, help='Desired CSV file.')
+    parser.add_argument('-c', '--column-headers', action='extend', nargs='+', type=str, help='Give desired column headers (leave spaces between each header).')
+    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: \'line\'.', default="line")
+    parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for the generated graph.')
+    parser.add_argument('-l', '--live-view', action='store_true', help='Stream data from CSV files to Graph in real-time.')
+    parser.add_argument('-a', '--animated', action='store_true', help='Creates an animated graph when true (will be saved as a gif).')
+    parser.add_argument('-s', '--save', action='store_true', help='Save graph.')
+    parser.add_argument('-y', '--yaml', action='store', type=str, help='Generate graph via yaml config file.')
 
     args = parser.parse_args()
-    #print(args)
-    csv_parser = CsvParser()
-    methods = GraphingMethods()
 
-    if args.menu == True:
-        while True:
-            print("""
-        Simple CSV Grapher Menu:
-        1.) Import Data from CSV File
-        2.) Remove Data
-        3.) Set XY Labels
-        4.) Set Title
-        5.) Choose Graph
-        6.) Plot Data
-        7.) Quit
-        """)
-            option = input("Option: ")
-            csv_parser.cli_menu(option)
+    if args.yaml is not None:
+        import yaml
+        data = dict()
+        try:
+            if args.yaml[-5:] != '.yaml':
+                filepath = os.path.join(currentFolder, "%s.yaml"%(args.yaml))
+            else:
+                filepath = os.path.join(currentFolder, args.yaml)
+            with open(filepath, 'r') as f:
+                yf = yaml.safe_load(f)
+                is_live = yf['live'] if 'live' in yf.keys() else False
+                if is_live == True:
+                    data = {'filepaths': [], 'headers': [], 'names': []}
+                for file in yf['files']:
+                    key = list(file.keys())[0]
+                    val = file[key]
+                    if 'path' in val: 
+                        path = os.path.join(log_path, val['path'])
+                    else:
+                        path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
+                    filepath = get_file(path, val['name'])
+                    print("Fetched %s"%(filepath))
+                    if is_live == True:
+                        data['filepaths'].append(filepath)
+                        data['headers'].append(val['headers'])
+                        data['names'].append(key)
+                    else:            
+                        data[key] = parse_csv(filepath, val['headers'])
+                if 'z_label' in yf['labels']:
+                    labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
+                else:
+                    labels = [yf['labels']['x_label'], yf['labels']['y_label']]
+                title = yf['title'] if 'title' in yf.keys() else ''
+                type = yf['type'] if 'type' in yf.keys() else 'line'
+                animated = yf['animated'] if 'animated' in yf.keys() else False
+                save_graph = yf['save'] if 'save' in yf.keys() else False
+                if is_live == True:
+                    live_plot(graph_type=type,graph_name=title, metadata=data, labels=labels)
+                else:
+                    plot(graph_type=type, title=title, labels=labels, data=data, is_animated=animated, save_file=save_graph)
+        except FileNotFoundError:
+            print('YAML file: %s does not exist.'%(filepath))
+        except KeyError as k:
+            print("KeyError: %s"%(k))
+        except TypeError as t:
+            print("One of the fields in your YAML file is not filled properly.\n%s"%(t))
     else:
         filename = args.file
-        filepath = os.path.join(log_path, filename)
-        col_names = args.column_names
-        graph_type = args.graph_type
-
-        values = csv_parser.parse_csv(filepath, col_names)
-        #convert_gps_to_xy(filename, values)
-        
-        if graph_type == 'line':
-            methods.simple_2d_plot(filename, col_names, values[0], values[1])
-        elif graph_type == 'scatter':
-            methods.simple_scatter(filename, col_names, values[0], values[1])
+        path_to_file = args.path if args.path is not None else ''
+        filepath = get_file(os.path.join(log_path, path_to_file), filename) 
+        title = args.title if args.title is not None else filename[:-4]
+        graph_type = args.graph_type if args.graph_type is not None else 'line'
+        if args.live_view == True:
+            data = {'filepaths':[filepath], 'headers':[args.column_headers], 'names':[filename[:-4]]}
+            live_plot(graph_type=graph_type,graph_name=title, labels=args.column_headers, metadata=data)
         else:
-            print("Unrecognized graph type: %s"%(graph_type))
+            values = parse_csv(filepath, args.column_headers)
+            data = {filename: values}
+            plot(graph_type=graph_type, title=title, labels=args.column_headers, data=data, is_animated=args.animated, save_file=args.save) 
 
 if __name__ == "__main__":
     main()
