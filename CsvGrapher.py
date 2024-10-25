@@ -9,6 +9,58 @@ import random
 import matplotlib.animation as animation
 from math import floor
 
+"""class DataParser:
+    def __init__(self):
+        self.labels = []
+        self.data = dict()
+        self.save_file = False
+        self.is_animated = False
+        self.live_view = False
+
+    def get_file(self, path, filename):
+        if filename == 'latest':
+            list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+            list_of_files.sort()
+            filepath = max(list_of_files)
+        elif filename == 'lastModified':
+            list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
+            filepath = max(list_of_files, key=os.path.getmtime)
+        else:
+            filepath = os.path.join(path, filename)
+        return filepath
+
+    def get_col_idxs(self, col_names, headers):
+        tmp = []
+        for col in col_names:
+            try:
+                idx = headers.index(col)
+                tmp.append(idx)
+            except ValueError:
+                raise ValueError('Column header \'%s\' is not in the csv file.'%(col))
+        return tmp
+
+    def parse_csv(filepath, col_names):
+        vals = []
+        try:
+            with open(filepath, 'r') as cr:
+                reader = csv.reader(cr)
+                headers = next(reader)
+                col_idxs = get_col_idxs(col_names, headers)
+
+                for i in range(len(col_idxs)):
+                    vals.append(list())
+                for row in reader:
+                    for i in range(len(col_idxs)):
+                        idx = col_idxs[i]
+                        vals[i].append(float(row[idx]))
+        except FileNotFoundError:
+            raise FileNotFoundError('%s does not exist. Check that path and filename.'%(filepath))
+        except StopIteration:
+            raise StopIteration('%s is empty.'%(filepath))
+        if len(vals[0]) == 0:
+            raise Exception('%s has no data.'%(filepath))
+        return vals"""
+
 currentFolder = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(currentFolder, 'log')
 graphs_path = os.path.join(log_path, 'graphs')
@@ -78,6 +130,8 @@ def plot(graph_type, title, labels, data, is_animated, save_file):
         print('Generating an animated gif may take some time (based on the quantity of data).')
     if graph_type in ['line', 'line3d']:
         multi_line(title,labels,data,graph_type,is_animated,save_file)
+    elif graph_type == 'line_yy':
+        line_yy(title, labels, data, save_file)
     elif graph_type in ['scatter', 'scatter3d']:
         multi_scatter(title,labels,data,graph_type,is_animated,save_file)
     elif graph_type =='scatterh':
@@ -224,6 +278,32 @@ def live_plot(graph_type, graph_name, metadata, labels):
 # Graphing Methods #
 ####################
 
+def line_yy(graph_name, labels, data, save_file):
+    fig, ax1 = plt.subplots()
+    ax1.set_xlabel(labels[0])
+    colors = color_dict(['y_axis1', 'y_axis2'])
+    ax1.set_ylabel(labels[1], color=colors['y_axis1'])
+    ax2 = ax1.twinx()
+    ax2.set_ylabel(labels[2], color=colors['y_axis2'])
+    plt.title(graph_name)
+
+    plots = []
+    for key, val in data.items():
+        points = val[1]
+        #print(val[0])
+        if val[0] == 1:
+            plot = ax1.plot(points[0], points[1], label=key, color=colors['y_axis1'])
+        elif val[0] == 2:
+            plot = ax2.plot(points[0], points[1], label=key, color=colors['y_axis2'])
+        plots += plot
+    labels = [l.get_label() for l in plots]
+    plt.legend(plots, labels,loc='upper right')
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+    
+
 def multi_line(graph_name, labels, data, g_type, is_animated, save_file):
     num_of_axes = graph_axes[g_type]
     fig = plt.figure()
@@ -362,7 +442,7 @@ def main():
     parser.add_argument('-p', '--path', action='store', type=str, help='Path to desired file (leave blank if parent directory is log/).')
     parser.add_argument('-f', '--file', action='store', type=str, help='Desired CSV file.')
     parser.add_argument('-c', '--column-headers', action='extend', nargs='+', type=str, help='Give desired column headers (leave spaces between each header).')
-    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: \'line\'.', default="line")
+    parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: \'line\'.', default="line")
     parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for the generated graph.')
     parser.add_argument('-l', '--live-view', action='store_true', help='Stream data from CSV files to Graph in real-time.')
     parser.add_argument('-a', '--animated', action='store_true', help='Creates an animated graph when true (will be saved as a gif).')
@@ -382,6 +462,8 @@ def main():
             with open(filepath, 'r') as f:
                 yf = yaml.safe_load(f)
                 is_live = yf['live'] if 'live' in yf.keys() else False
+                type = yf['type'] if 'type' in yf.keys() else 'line'
+                assigned_y_axis = None
                 if is_live == True:
                     data = {'filepaths': [], 'headers': [], 'names': []}
                 for file in yf['files']:
@@ -393,18 +475,25 @@ def main():
                         path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
                     filepath = get_file(path, val['name'])
                     print("Fetched %s"%(filepath))
+                    if 'y_axis' in val:
+                        assigned_y_axis = val['y_axis']
                     if is_live == True:
                         data['filepaths'].append(filepath)
                         data['headers'].append(val['headers'])
                         data['names'].append(key)
-                    else:            
-                        data[key] = parse_csv(filepath, val['headers'])
+                    else:
+                        if type == 'line_yy':            
+                            data[key] = tuple([assigned_y_axis, parse_csv(filepath, val['headers'])])
+                        else:
+                            data[key] = parse_csv(filepath, val['headers'])
+                labels = [yf['labels']['x_label'], yf['labels']['y_label']]
+                if 'y2_label' in yf['labels']:
+                    labels.append(yf['labels']['y2_label']) 
                 if 'z_label' in yf['labels']:
-                    labels = [yf['labels']['x_label'], yf['labels']['y_label'], yf['labels']['z_label']]
-                else:
-                    labels = [yf['labels']['x_label'], yf['labels']['y_label']]
+                    labels.append(yf['labels']['z_label'])
+                #else:
+                #    labels = [yf['labels']['x_label'], yf['labels']['y_label']]
                 title = yf['title'] if 'title' in yf.keys() else ''
-                type = yf['type'] if 'type' in yf.keys() else 'line'
                 animated = yf['animated'] if 'animated' in yf.keys() else False
                 save_graph = yf['save'] if 'save' in yf.keys() else False
                 if is_live == True:

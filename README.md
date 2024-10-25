@@ -30,29 +30,22 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a PNG file based on a specified CSV file. It only supports one file at a time. 
 ```
-usage: CSV Graphing [-h] [-p PATH] [-f FILE]
-                    [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE]
-                    [-t TITLE] [-l] [-a] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE] [-t TITLE] [-l] [-a] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
 options:
   -h, --help            show this help message and exit
-  -p PATH, --path PATH  Path to desired file (leave blank if parent
-                        directory is log/).
+  -p PATH, --path PATH  Path to desired file (leave blank if parent directory is log/).
   -f FILE, --file FILE  Desired CSV file.
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
-                        Give desired column headers (leave spaces between
-                        each header).
+                        Give desired column headers (leave spaces between each header).
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line3d",
-                        "scatter", "scatter3d", "scatterh", "hist", "stem"].
-                        Default: 'line'.
+                        Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: 'line'.
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
   -l, --live-view       Stream data from CSV files to Graph in real-time.
-  -a, --animated        Creates an animated graph when true (will be saved
-                        as a gif).
+  -a, --animated        Creates an animated graph when true (will be saved as a gif).
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
@@ -68,9 +61,14 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```path```** is the path to find the CSV file from within the ```log/``` directory. If the file is directly in the ```log/``` directory, put empty single quotes ```''``` in this field.
 - **```name```** is the CSV filename. Using the keyword ```latest``` will grab the last generated file alphabetically. Using the keyword ```lastModified``` will grab the last modified file. 
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
-- **```labels```** correlates to the x, y, and z labels (only supports one of each). The z label is an option. 
+- **```y_axis```** (Optional) A numerical number which indicates which y-axis the data should be plotted on. Required for running a graph type with two y-axes such as line_yy.
+- **```labels```** correlates to the x, y, and z labels. The following options are valid:
+    - x_label
+    - y_label
+    - y2_label (optional for two y axes)
+    - z_label (optional for 3D plots)
 - **```title```** is the title of the generated graph. 
-- **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot. If nothing is chosen the default is 'line'.
+- **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D, 2D with two y-axes, and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot. If nothing is chosen the default is 'line'.
 - **```animated```** is a boolean value that determines whether the graph is animated and saved (when true).
 - **```live```** is a boolean value that determines whether the graph is we generated using a continuous data stream for CSV files. The graph will be updated in real-time as new data is retrieved.
 - **```save```** is a boolean value that determines whether the graph is saved (when true) or just plotted (when false). The format of saved file for graphs is as follows ```YYYY_MM_DD_hh_mm_ss_Title.png```.
