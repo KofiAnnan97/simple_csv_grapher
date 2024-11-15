@@ -102,26 +102,43 @@ def get_col_idxs(col_names, headers):
         except ValueError:
             raise ValueError('Column header \'%s\' is not in the csv file.'%(col))
     return tmp
-
-def parse_csv(filepath, col_names):
+    
+def parse_csv(filepath, col_names, group_by=None):
     vals = []
+    groups = dict()
     try:
         with open(filepath, 'r') as cr:
-            reader = csv.reader(cr)
-            headers = next(reader)
-            col_idxs = get_col_idxs(col_names, headers)
-
-            for i in range(len(col_idxs)):
-                vals.append(list())
-            for row in reader:
+            if group_by is not None:
+                reader = csv.reader(cr)
+                headers = next(reader)
+                col_names.insert(0, group_by)
+                col_idxs = get_col_idxs(col_names, headers)
+                for row in reader:
+                    group_name = row[col_idxs[0]]
+                    if group_name not in groups.keys():
+                        tmp = []
+                        for i in range(len(col_idxs)-1):
+                            tmp.append(list())
+                        groups[group_name] = tmp
+                    for i in range(1, len(col_idxs)):
+                        idx = col_idxs[i]
+                        groups[group_name][i-1].append(float(row[idx]))
+                vals = groups
+            else:
+                reader = csv.reader(cr)
+                headers = next(reader)
+                col_idxs = get_col_idxs(col_names, headers)
                 for i in range(len(col_idxs)):
-                    idx = col_idxs[i]
-                    vals[i].append(float(row[idx]))
+                    vals.append(list())
+                for row in reader:
+                    for i in range(len(col_idxs)):
+                        idx = col_idxs[i]
+                        vals[i].append(float(row[idx]))
     except FileNotFoundError:
         raise FileNotFoundError('%s does not exist. Check that path and filename.'%(filepath))
     except StopIteration:
         raise StopIteration('%s is empty.'%(filepath))
-    if len(vals[0]) == 0:
+    if (isinstance(vals, list) and len(vals[0]) == 0) or (isinstance(vals, dict) and len(vals.keys()) == 0):
         raise Exception('%s has no data.'%(filepath))
     return vals
 
@@ -239,7 +256,7 @@ def update(i, ax, metadata, labels, title, colors, graph_type):
     lines = []
     for j in range(len(metadata['filepaths'])):
         filepath = metadata['filepaths'][j]
-        data = parse_csv(filepath, metadata['headers'][j])
+        data = parse_csv(filepath, metadata['headers'][j], None)
         if graph_type == 'line':
             lines.append(ax.plot(data[0], data[1], label=metadata['names'], c=colors[filepath]))
         elif graph_type == 'scatter':
@@ -259,7 +276,7 @@ def live_plot(graph_type, graph_name, metadata, labels):
     colors = color_dict(filepaths)
     ax.set(xlabel=labels[0], ylabel=labels[1])
     for i in range(len(filepaths)):
-        data = parse_csv(filepaths[i], headers[i])
+        data = parse_csv(filepaths[i], headers[i], None)
         if graph_type == 'line':
             ax.plot(data[0][0], data[1][0], c=colors[filepaths[i]], label=names[i])
         elif graph_type == 'scatter':
@@ -442,6 +459,7 @@ def main():
     parser.add_argument('-p', '--path', action='store', type=str, help='Path to desired file (leave blank if parent directory is log/).')
     parser.add_argument('-f', '--file', action='store', type=str, help='Desired CSV file.')
     parser.add_argument('-c', '--column-headers', action='extend', nargs='+', type=str, help='Give desired column headers (leave spaces between each header).')
+    parser.add_argument('-b', '--group-by', action='store', type=str, help="Group the data based on a specific column name.")
     parser.add_argument('-g', '--graph-type', action='store', help='Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: \'line\'.', default="line")
     parser.add_argument('-t', '--title', action='store', type=str, help='Provide title for the generated graph.')
     parser.add_argument('-l', '--live-view', action='store_true', help='Stream data from CSV files to Graph in real-time.')
@@ -474,6 +492,8 @@ def main():
                     else:
                         path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
                     filepath = get_file(path, val['name'])
+                    group_by = val['group_by'] if 'group_by' in val else None
+                    csv_data = parse_csv(filepath, val['headers'], group_by)
                     print("Fetched %s"%(filepath))
                     if 'y_axis' in val:
                         assigned_y_axis = val['y_axis']
@@ -482,17 +502,19 @@ def main():
                         data['headers'].append(val['headers'])
                         data['names'].append(key)
                     else:
-                        if type == 'line_yy':            
-                            data[key] = tuple([assigned_y_axis, parse_csv(filepath, val['headers'])])
-                        else:
-                            data[key] = parse_csv(filepath, val['headers'])
+                        if isinstance(csv_data, dict):
+                            for group_name in csv_data.keys():
+                                data[group_name] = csv_data[group_name]
+                        elif isinstance(csv_data, list):
+                            if type == 'line_yy':            
+                                data[key] = tuple([assigned_y_axis, csv_data])
+                            else:
+                                data[key] = csv_data
                 labels = [yf['labels']['x_label'], yf['labels']['y_label']]
                 if 'y2_label' in yf['labels']:
                     labels.append(yf['labels']['y2_label']) 
                 if 'z_label' in yf['labels']:
                     labels.append(yf['labels']['z_label'])
-                #else:
-                #    labels = [yf['labels']['x_label'], yf['labels']['y_label']]
                 title = yf['title'] if 'title' in yf.keys() else ''
                 animated = yf['animated'] if 'animated' in yf.keys() else False
                 save_graph = yf['save'] if 'save' in yf.keys() else False
@@ -512,12 +534,13 @@ def main():
         filepath = get_file(os.path.join(log_path, path_to_file), filename) 
         title = args.title if args.title is not None else filename[:-4]
         graph_type = args.graph_type if args.graph_type is not None else 'line'
+        group_by = args.group_by if args.group_by is not None else None
         if args.live_view == True:
             data = {'filepaths':[filepath], 'headers':[args.column_headers], 'names':[filename[:-4]]}
             live_plot(graph_type=graph_type,graph_name=title, labels=args.column_headers, metadata=data)
         else:
-            values = parse_csv(filepath, args.column_headers)
-            data = {filename: values}
+            values = parse_csv(filepath, args.column_headers, group_by)
+            data = {filename: values} if group_by is None else values
             plot(graph_type=graph_type, title=title, labels=args.column_headers, data=data, is_animated=args.animated, save_file=args.save) 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ This script can be run in two distinct manners (command line and configuration f
 ### Command line
 This method allows the user to plot and save a PNG file based on a specified CSV file. It only supports one file at a time. 
 ```
-usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-g GRAPH_TYPE] [-t TITLE] [-l] [-a] [-s] [-y YAML]
+usage: CSV Graphing [-h] [-p PATH] [-f FILE] [-c COLUMN_HEADERS [COLUMN_HEADERS ...]] [-b GROUP_BY] [-g GRAPH_TYPE] [-t TITLE] [-l] [-a] [-s] [-y YAML]
 
 A simple program that graphs data from csv files.
 
@@ -40,6 +40,8 @@ options:
   -f FILE, --file FILE  Desired CSV file.
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
                         Give desired column headers (leave spaces between each header).
+  -b GROUP_BY, --group-by GROUP_BY
+                        Group the data based on a specific column name.
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
                         Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: 'line'.
   -t TITLE, --title TITLE
@@ -61,6 +63,7 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```path```** is the path to find the CSV file from within the ```log/``` directory. If the file is directly in the ```log/``` directory, put empty single quotes ```''``` in this field.
 - **```name```** is the CSV filename. Using the keyword ```latest``` will grab the last generated file alphabetically. Using the keyword ```lastModified``` will grab the last modified file. 
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
+- **```group_by```** groups data from a single file based on the column specified. Can only be used with one colum at a time.
 - **```y_axis```** (Optional) A numerical number which indicates which y-axis the data should be plotted on. Required for running a graph type with two y-axes such as line_yy.
 - **```labels```** correlates to the x, y, and z labels. The following options are valid:
     - x_label
@@ -80,6 +83,7 @@ files:
       path: path/to/file1
       name: file1.csv
       headers: [col1, col2]
+      group_by: "name"
   - file2:
       path: path/to/file2
       name: file2.csv
@@ -87,6 +91,7 @@ files:
 labels:
   x_label: col1
   y_label: col2
+  y2_label: col2_2
   z_label: col3
 title: Example Scatter Plot
 type: scatter
