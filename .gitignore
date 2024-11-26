@@ -1,5 +1,11 @@
 # Test log directory
 log/
 
-# Test yaml files
-doubley.yaml
+# Ignore pycache
+*.pyc
+
+# Ignore all yaml files
+*.yaml
+
+# Exceptions
+! test.yaml

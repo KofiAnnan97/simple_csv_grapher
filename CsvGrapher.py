@@ -9,6 +9,8 @@ import random
 import matplotlib.animation as animation
 from math import floor
 
+from metrics import PerformanceMetrics
+
 """class DataParser:
     def __init__(self):
         self.labels = []
@@ -157,6 +159,10 @@ def plot(graph_type, title, labels, data, is_animated, save_file):
          multi_histogram(title,labels,data,save_file)
     elif graph_type == 'stem':
         multi_stem(title,labels,data,save_file)
+    elif graph_type == "perf2d":
+        perf2d(title,labels,data,save_file)
+    elif graph_type == "perf3d":
+        perf3d(title,labels,data,save_file)
     else:
         print("Unrecognized graph type: %s"%(graph_type))
         sys.exit(0)
@@ -445,6 +451,76 @@ def multi_stem(graph_name, labels, data, save_file):
         ax.stem(val[0], val[1], label=key, linefmt=colors[key], markerfmt='D')
     plt.legend()
 
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+
+def show_ate_results(graph_name, data, ref_key, path, save_file):
+    pm = PerformanceMetrics()
+    data_pos = []
+    data_x  = []
+    data_y = []
+    keys = list(data.keys())
+    ground_truth = data[ref_key]
+    row_labels = []
+    for i in range(0,len(keys)):
+        if keys[i] != ref_key:
+            method = data[keys[i]]
+            metrics = pm.get_pose_diff_metrics(ground_truth, method, keys[i])
+            data_pos.append(metrics)
+            metrics = pm.get_single_val_metrics(ground_truth, method, "x")
+            data_x.append(metrics)
+            metrics = pm.get_single_val_metrics(ground_truth, method, "y")
+            data_y.append(metrics)
+            row_labels.append(keys[i])
+
+    collection = [data_pos, data_x, data_y]
+    #print(collection)
+    order = ["Position", "X", "Y"]
+
+    cols = ('RSME', 'Mean', 'Standard Deviation')
+    filename = create_filename("%s_ATE"%graph_name)
+    pm.show_table(f"{graph_name} ATE", filename, row_labels, cols, collection, order, path, save_file)
+    print("Complete")
+
+def perf2d(graph_name, labels, data, save_file):
+    ref_key = "GPS"
+    fig, axs = plt.subplots(2, sharex=True)
+    plt.suptitle(graph_name)
+    ylabels = labels[1].split(",")
+
+    limits = get_limits(data)
+    axs[0].set(xlim=limits[0], ylim=limits[1], ylabel=ylabels[0])
+    axs[1].set(xlim=limits[0], ylim=limits[2], xlabel=labels[0], ylabel=ylabels[1])
+   
+    for key, val in data.items():
+        axs[0].plot(val[0], val[1], label=key)
+        axs[1].plot(val[0], val[2], label=key)
+    
+    plt.legend()
+    if save_file == True:
+        save(graph_name)
+    else:
+        plt.show()
+    show_ate_results(graph_name, data, ref_key, graphs_path, save_file)
+
+def perf3d(graph_name, labels, data, save_file):
+    fig, axs = plt.subplots(3, sharex=True)
+    plt.suptitle(graph_name)
+    ylabels = labels[1].split(",")
+
+    limits = get_limits(data)
+    axs[0].set(xlim=limits[0], ylim=limits[1], ylabel=ylabels[0])
+    axs[1].set(xlim=limits[0], ylim=limits[2], ylabel=ylabels[1])
+    axs[2].set(xlim=limits[0], ylim=limits[3], xlabel=labels[0], ylabel=ylabels[2])
+   
+    for key, val in data.items():
+        axs[0].plot(val[0], val[1], label=key)
+        axs[1].plot(val[0], val[2], label=key)
+        axs[2].plot(val[0], val[3], label=key)
+    
+    plt.legend()
     if save_file == True:
         save(graph_name)
     else:
