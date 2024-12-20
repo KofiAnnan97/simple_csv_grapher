@@ -1,9 +1,6 @@
 import math
 import matplotlib.pyplot as plt
 
-
-
-
 class PerformanceMetrics:
     def __init__(self):
         pass
