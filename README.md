@@ -12,6 +12,8 @@
   - [Supported Graphs Types](#supported-graph-types)
 - [Live View](#live-view)
   - [Supported Graph Types](#supported-graph-types-1)
+- [Metrics](#metrics)
+  - [YAML Config](#yaml-configuration)
 - [Known Issues](#known-issues)
 
 ## Requirements:
@@ -43,7 +45,7 @@ options:
   -b GROUP_BY, --group-by GROUP_BY
                         Group the data based on a specific column name.
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem"]. Default: 'line'.
+                        Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem", "perf2d", "perf3d"]. Default: "line".
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
   -l, --live-view       Stream data from CSV files to Graph in real-time.
@@ -67,8 +69,7 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```y_axis```** (Optional) A numerical number which indicates which y-axis the data should be plotted on. Required for running a graph type with two y-axes such as line_yy.
 - **```labels```** correlates to the x, y, and z labels. The following options are valid:
     - x_label
-    - y_label
-    - y2_label (optional for two y axes)
+    - y_label (comma delimiter used for multiple y labels)
     - z_label (optional for 3D plots)
 - **```title```** is the title of the generated graph. 
 - **```type```** determines what type of graph will be generated. Currently supports: a line graph (2D, 2D with two y-axes, and 3D), a scatter plot (2D and 3D), a scatter plot with histograms, histogram and stem plot. If nothing is chosen the default is 'line'.
@@ -90,8 +91,7 @@ files:
       headers: [col1, col2]
 labels:
   x_label: col1
-  y_label: col2
-  y2_label: col2_2
+  y_label: "col2,col2_2"
   z_label: col3
 title: Example Scatter Plot
 type: scatter
@@ -100,17 +100,21 @@ live: false
 save: true
 ```
 
-Here's an example of how to run the script with the yaml config file. The ```.yaml``` extension does not need to included for the command to work.
+Run the following command to run the script with a yaml file.  
 ```bash
 $ python3 CsvGrapher.py -y example.yaml
 ```  
+It can also be run without the ```.yaml``` extension like this.
+```bash
+$ python3 CsvGrapher.py -y example
+``` 
 
 Example output:
 
 ![Example Scatter Plot](./examples/images/scatter.png)
 
 ## Animated Graphs
-Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```log/animated/```. 
+Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```log/animated/```. Supports the `group_by` command.
 
 ### Supported Graph Types
 *2D Line Graph*
@@ -130,11 +134,35 @@ Both graphing methods: command line and YAML configuration file can take advanta
 ![Animated 3D Scatter Plot](./examples/images/animated_scatter3d.gif)
 
 ## Live View
-Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files. 
+Both graphing methods: command line and YAML configuration file can take advantage of live data streaming. However the YAML config is the only option that supports multiple data streams from CSV files. Supports the `group_by` command.
 
 ### Supported Graph Types
 - *2D Line Graph* (looks similiar to animated line graph above)
 - *2D Scatter Plot* (looks similar to animated scatter plot above)
+
+## Metrics
+This script relies on a separate script called `metrics.py` to compute metrics. Once computed it will be show as table using this script. This featrue is currently only supported using a YAML configuration. At the moment the following metrics are supported:
+- `ate`: Absolute Trajectory Error (ATE) in the 2D plane
+
+### Yaml Configuration
+The following should be added to the yaml configuration when using metrics.
+- **```metrics```** is the keyword used to find all the files that will be used to generate a graph. 
+- **```type```** is the type of metric.
+- **```ground_truth```** is the name of the file aliase or groub_by name that will be used as the ground truth for evalution. 
+```yaml
+...
+metrics:
+  - metric1:
+      type: 'metric_type'
+      ground_truth: 'reference_data'
+  - metric2:
+      type: 'metric_type'
+      ground_truth: 'reference_data'
+...
+animated: false
+live: false
+save: true
+```
 
 ## Known Issues
 - Live View may not close after the window has been exited.
