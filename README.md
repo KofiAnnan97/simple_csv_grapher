@@ -45,7 +45,8 @@ options:
   -b GROUP_BY, --group-by GROUP_BY
                         Group the data based on a specific column name.
   -g GRAPH_TYPE, --graph-type GRAPH_TYPE
-                        Choose one of the following ["line", "line_yy", "line3d", "scatter", "scatter3d", "scatterh", "hist", "stem", "perf2d", "perf3d"]. Default: "line".
+                        Choose one of the following ["line", "line_xx", "line_yy", "line3d", "scatter", "scatter_xx", "scatter_yy", "scatter3d", "scatterh", "hist", "stem",
+                        "perf2d", "perf3d"]. Default: "line".
   -t TITLE, --title TITLE
                         Provide title for the generated graph.
   -l, --live-view       Stream data from CSV files to Graph in real-time.
@@ -66,7 +67,7 @@ Graphing multiple CSV files requires the use of the yaml configuration method. T
 - **```name```** is the CSV filename. Using the keyword ```latest``` will grab the last generated file alphabetically. Using the keyword ```lastModified``` will grab the last modified file. 
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
 - **```group_by```** groups data from a single file based on the column specified. Can only be used with one colum at a time.
-- **```y_axis```** (Optional) A numerical number which indicates which y-axis the data should be plotted on. Required for running a graph type with two y-axes such as line_yy.
+- **```axis```** (Optional) A numerical number which indicates which x-axis or y-axis the data should be plotted on. Required for running a graph type with a secondary axis including line_xx, line_yy, scatter_xx, scatter_yy.
 - **```labels```** correlates to the x, y, and z labels. The following options are valid:
     - x_label
     - y_label (comma delimiter used for multiple y labels)
