@@ -166,3 +166,4 @@ save: true
 
 ## Known Issues
 - Live View may not close after the window has been exited.
+- The colors for different plots can look very similar.
