@@ -116,14 +116,8 @@ def plot():
         print('Generating an animated gif may take some time (based on the quantity of data).')
     if GRAPH_TYPE in ['line', 'line3d']:
         multi_line()
-    elif GRAPH_TYPE == 'line_xx':
-        line_xx()
-    elif GRAPH_TYPE == 'line_yy':
-        line_yy()
-    elif GRAPH_TYPE == 'scatter_xx':
-        scatter_xx()
-    elif GRAPH_TYPE == 'scatter_yy':
-        scatter_yy()
+    elif GRAPH_TYPE in ['line_xx', 'line_yy', 'scatter_xx', 'scatter_yy']:
+        second_axis()
     elif GRAPH_TYPE in ['scatter', 'scatter3d']:
         multi_scatter()
     elif GRAPH_TYPE =='scatterh':
@@ -298,14 +292,26 @@ def live_plot(metadata):
 # Graphing Methods #
 ####################
 
-def line_xx():
+def second_axis():
     fig, ax1 = plt.subplots()
-    xlabels = LABELS[0].split(",")[:2]
-    ax1.set_ylabel(LABELS[1])
-    colors = color_dict(xlabels)
-    ax1.set_xlabel(xlabels[0], color=colors[xlabels[0]])
-    ax2 = ax1.twiny()
-    ax2.set_xlabel(xlabels[1], color=colors[xlabels[1]])
+    static_axis = None
+    two_axes = None
+    if GRAPH_TYPE in ['line_xx', 'scatter_xx']:
+        static_axis = LABELS[1]
+        two_axes = LABELS[0].split(",")[:2]
+        ax1.set_ylabel(static_axis)
+        colors = color_dict(two_axes)
+        ax1.set_xlabel(two_axes[0], color=colors[two_axes[0]])
+        ax2 = ax1.twiny()
+        ax2.set_xlabel(two_axes[1], color=colors[two_axes[1]])
+    elif GRAPH_TYPE in ['line_yy', 'scatter_yy']:
+        static_axis = LABELS[0]
+        two_axes = LABELS[1].split(",")[:2]
+        ax1.set_xlabel(static_axis)
+        colors = color_dict(two_axes)
+        ax1.set_ylabel(two_axes[0], color=colors[two_axes[0]])
+        ax2 = ax1.twinx()
+        ax2.set_ylabel(two_axes[1], color=colors[two_axes[1]])
     plt.title(TITLE)
 
     plots = []
@@ -313,38 +319,20 @@ def line_xx():
         points = val[1]
         plot = None
         if val[0] == 1:
-            plot = ax1.plot(points[0], points[1], label=key, color=colors[xlabels[0]])
+            if GRAPH_TYPE in ['line_xx', 'line_yy']:
+                plot = ax1.plot(points[0], points[1], label=key, color=colors[two_axes[0]])
+            elif GRAPH_TYPE in ['scatter_xx', 'scatter_yy']:
+                plot = ax1.scatter(points[0], points[1], label=key, color=colors[two_axes[0]])
         elif val[0] == 2:
-            plot = ax2.plot(points[0], points[1], label=key, color=colors[xlabels[1]])
+            if GRAPH_TYPE in ['line_xx', 'line_yy']:
+                plot = ax2.plot(points[0], points[1], label=key, color=colors[two_axes[1]])
+            elif GRAPH_TYPE in ['scatter_xx', 'scatter_yy']:
+                plot = ax2.scatter(points[0], points[1], label=key, color=colors[two_axes[1]])
         if plot is not None:
-            plots += plot
-    set_labels = [l.get_label() for l in plots]
-    plt.legend(plots, set_labels,loc='upper right')
-    if SAVE_FILE == True:
-        save(TITLE)
-    else:
-        plt.show()
-
-def line_yy():
-    fig, ax1 = plt.subplots()
-    ylabels = LABELS[1].split(",")[:2]
-    ax1.set_xlabel(LABELS[0])
-    colors = color_dict(ylabels)
-    ax1.set_ylabel(ylabels[0], color=colors[ylabels[0]])
-    ax2 = ax1.twinx()
-    ax2.set_ylabel(ylabels[1], color=colors[ylabels[1]])
-    plt.title(TITLE)
-
-    plots = []
-    for key, val in DATA.items():
-        points = val[1]
-        plot = None
-        if val[0] == 1:
-            plot = ax1.plot(points[0], points[1], label=key, color=colors[ylabels[0]])
-        elif val[0] == 2:
-            plot = ax2.plot(points[0], points[1], label=key, color=colors[ylabels[1]])
-        if plot is not None:
-            plots += plot
+            if GRAPH_TYPE in ['line_xx', 'line_yy']:
+                plots += plot
+            elif GRAPH_TYPE in ['scatter_xx', 'scatter_yy']:
+                plots.append(plot)
     set_labels = [l.get_label() for l in plots]
     plt.legend(plots, set_labels,loc='upper right')
     if SAVE_FILE == True:
@@ -380,60 +368,6 @@ def multi_line():
             save(TITLE)
         else:
             plt.show()
-
-def scatter_xx():
-    fig, ax1 = plt.subplots()
-    xlabels = LABELS[0].split(",")[:2]
-    ax1.set_ylabel(LABELS[1])
-    colors = color_dict(xlabels)
-    ax1.set_xlabel(xlabels[0], color=colors[xlabels[0]])
-    ax2 = ax1.twiny()
-    ax2.set_xlabel(xlabels[1], color=colors[xlabels[1]])
-    plt.title(TITLE)
-
-    plots = []
-    for key, val in DATA.items():
-        points = val[1]
-        plot = None
-        if val[0] == 1:
-            plot = ax1.scatter(points[0], points[1], label=key, color=colors[xlabels[0]])
-        elif val[0] == 2:
-            plot = ax2.scatter(points[0], points[1], label=key, color=colors[xlabels[1]])
-        if plot is not None:
-            plots.append(plot)
-    set_labels = [l.get_label() for l in plots]
-    plt.legend(plots, set_labels,loc='upper right')
-    if SAVE_FILE == True:
-        save(TITLE)
-    else:
-        plt.show()
-
-def scatter_yy():
-    fig, ax1 = plt.subplots()
-    ylabels = LABELS[1].split(",")[:2]
-    ax1.set_xlabel(LABELS[0])
-    colors = color_dict(ylabels)
-    ax1.set_ylabel(ylabels[0], color=colors[ylabels[0]])
-    ax2 = ax1.twinx()
-    ax2.set_ylabel(ylabels[1], color=colors[ylabels[1]])
-    plt.title(TITLE)
-
-    plots = []
-    for key, val in DATA.items():
-        points = val[1]
-        plot = None
-        if val[0] == 1:
-            plot = ax1.scatter(points[0], points[1], label=key, color=colors[ylabels[0]])
-        elif val[0] == 2:
-            plot = ax2.scatter(points[0], points[1], label=key, color=colors[ylabels[1]])
-        if plot is not None:
-            plots.append(plot)
-    set_labels = [l.get_label() for l in plots]
-    plt.legend(plots, set_labels,loc='upper right')
-    if SAVE_FILE == True:
-        save(TITLE)
-    else:
-        plt.show()
 
 def multi_scatter():
     num_of_axes = graph_axes[GRAPH_TYPE]
@@ -702,7 +636,6 @@ def main():
             values = parse_csv(filepath, args.column_headers, group_by)
             DATA = {filename: values} if group_by is None else values
             plot() 
-
 
 if __name__ == "__main__":
     main()

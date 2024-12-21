@@ -144,6 +144,7 @@ Both graphing methods: command line and YAML configuration file can take advanta
 ## Metrics
 This script relies on a separate script called `metrics.py` to compute metrics. Once computed it will be show as table using this script. This featrue is currently only supported using a YAML configuration. At the moment the following metrics are supported:
 - `ate`: Absolute Trajectory Error (ATE) in the 2D plane
+  ![Metrics ATE](./examples/images/table_ate.png)
 
 ### Yaml Configuration
 The following should be added to the yaml configuration when using metrics.
@@ -160,6 +161,7 @@ metrics:
       type: 'metric_type'
       ground_truth: 'reference_data'
 ...
+title: Table
 animated: false
 live: false
 save: true
@@ -168,3 +170,4 @@ save: true
 ## Known Issues
 - Live View may not close after the window has been exited.
 - The colors for different plots can look very similar.
+- `axis` and `group_by` are currently incompatible with each other.
