@@ -11,8 +11,12 @@ labels:
   x_label: X
   y_label: Y
   z_label: Z
-title: "Animated Scatter Plot"
-type: scatter3d
+title: " Example Plot"
+type: line3d
+metrics:
+  - ATE:
+      type: 'ate'
+      ground_truth: 'Spiral1'
 live: false
 animated: true
 save: false
