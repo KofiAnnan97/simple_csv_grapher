@@ -14,7 +14,9 @@ from copy import copy, deepcopy
 from enum import Enum
 from typing import Dict, List, Any, Tuple
 
-from metrics import PerformanceMetrics, METRIC_TYPES
+# Project files
+from parser import DataParser, CSVParser
+from metrics import PerformanceMetrics, ATE, METRIC_TYPES
 
 # Log path configuration
 currentFolder = os.path.dirname(os.path.realpath(__file__))
@@ -72,68 +74,6 @@ graph_axes = {
 ###################
 # General Methods #
 ###################
-
-def get_file(path: str, filename: str) -> str:
-    if filename == 'latest':
-        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
-        list_of_files.sort()
-        filepath = max(list_of_files)
-    elif filename == 'lastModified':
-        list_of_files = glob.glob(os.path.join(path, '*'), recursive=False)
-        filepath = max(list_of_files, key=os.path.getmtime)
-    else:
-        filepath = os.path.join(path, filename)
-    return filepath
-
-def get_col_idxs(col_names: List[str], headers: List[str]) -> List[int]:
-    tmp = []
-    for col in col_names:
-        try:
-            idx = headers.index(col)
-            tmp.append(idx)
-        except ValueError:
-            raise ValueError('Column header \'%s\' is not in the csv file.'%(col))
-    return tmp
-    
-def parse_csv(filepath: str, col_names: List[str], group_by: str=''):
-    vals = []
-    groups = dict()
-    tmp_cols = copy(col_names)
-    try:
-        with open(filepath, 'r') as cr:
-            if group_by != '':
-                reader = csv.reader(cr)
-                headers = next(reader)
-                tmp_cols.insert(0, group_by)
-                col_idxs = get_col_idxs(tmp_cols, headers)
-                for row in reader:
-                    group_name = row[col_idxs[0]]
-                    if group_name not in groups.keys():
-                        tmp = []
-                        for i in range(len(col_idxs)-1):
-                            tmp.append(list())
-                        groups[group_name] = tmp
-                    for i in range(1, len(col_idxs)):
-                        idx = col_idxs[i]
-                        groups[group_name][i-1].append(float(row[idx]))
-                vals = groups
-            else:
-                reader = csv.reader(cr)
-                headers = next(reader)
-                col_idxs = get_col_idxs(tmp_cols, headers)
-                for i in range(len(col_idxs)):
-                    vals.append(list())
-                for row in reader:
-                    for i in range(len(col_idxs)):
-                        idx = col_idxs[i]
-                        vals[i].append(float(row[idx]))
-    except FileNotFoundError:
-        raise FileNotFoundError('%s does not exist. Check that path and filename.'%(filepath))
-    except StopIteration:
-        raise StopIteration('%s is empty.'%(filepath))
-    if (isinstance(vals, list) and len(vals) == 0) or (isinstance(vals, dict) and len(vals.keys()) == 0):
-        raise Exception('%s has no data.'%(filepath))
-    return vals
 
 def plot(params: Parameters) -> None:
     if params.is_animated:
@@ -261,7 +201,7 @@ def update(i: int, ax: Axes, metadata: Dict[Any, Any], colors: Dict[Any, Any], t
     lines = []
     for j in range(len(metadata['filepaths'])):
         filepath = metadata['filepaths'][j]
-        csv_data = parse_csv(filepath, metadata['headers'][j], metadata['group_by'][j])
+        csv_data = CSVParser.parse_csv(filepath, metadata['headers'][j], metadata['group_by'][j])
         if isinstance(csv_data, dict):
             for key, val in csv_data.items():
                 if graph_type == GRAPH_TYPES.LINE.value:
@@ -289,7 +229,7 @@ def live_plot(metadata: Dict[Any, Any], title: str, labels: List[str], graph_typ
     colors = color_dict(filepaths)
     ax.set(xlabel=labels[0], ylabel=labels[1])
     for i in range(len(filepaths)):
-        csv_data = parse_csv(filepaths[i], headers[i], group_by[i])
+        csv_data = CSVParser.parse_csv(filepaths[i], headers[i], group_by[i])
         if isinstance(csv_data, dict):
             colors[i] = color_dict(list(csv_data.keys()))
             for key, val in csv_data.items():
@@ -518,12 +458,7 @@ def position_perf(p: Parameters) -> None:
 # Metrics #
 ###########
 
-def show_metric(metric_name: str, metric_type: str, ground_truth: Any, p: Parameters) -> None:
-    if metric_type == METRIC_TYPES.ATE.value:
-        show_ate_results(metric_name, ground_truth, graphs_path, p)
-
 def show_ate_results(metric_name: str, expected: Any, path: Any, p: Parameters) -> None:
-    pm = PerformanceMetrics()
     data_pos = []
     data_x  = []
     data_y = []
@@ -533,21 +468,25 @@ def show_ate_results(metric_name: str, expected: Any, path: Any, p: Parameters) 
     for i in range(0,len(keys)):
         if keys[i] != expected:
             method = p.data[keys[i]]
-            metrics = pm.get_pose_diff_metrics(ground_truth, method, keys[i])
+            metrics = ATE.get_pose_diff_metrics(ground_truth, method, keys[i])
             data_pos.append(metrics)
-            metrics = pm.get_single_val_metrics(ground_truth, method, "x")
+            metrics = ATE.get_single_val_metrics(ground_truth, method, "x")
             data_x.append(metrics)
-            metrics = pm.get_single_val_metrics(ground_truth, method, "y")
+            metrics = ATE.get_single_val_metrics(ground_truth, method, "y")
             data_y.append(metrics)
             row_labels.append(keys[i])
 
     collection = [data_pos, data_x, data_y]
     #print(collection)
     order = ["Position", "X", "Y"]
-    cols = ('RSME', 'Mean', 'Standard Deviation')
+    cols = ["RSME", "Mean", "Standard Deviation"]
     filename = create_filename("%s_ATE"%p.title)
-    pm.show_table(f"%s_ATE"%p.title, filename, row_labels, cols, collection, order, path, p.save_file)
+    PerformanceMetrics.show_table(f"%s_ATE"%p.title, filename, row_labels, cols, collection, order, path, p.save_file)
     print("Complete")
+
+def show_metric(metric_name: str, metric_type: str, ground_truth: Any, p: Parameters) -> None:
+    if metric_type == METRIC_TYPES.ATE.value:
+        show_ate_results(metric_name, ground_truth, graphs_path, p)
 
 ################
 # Main Program #
@@ -591,7 +530,7 @@ def main():
                         path = os.path.join(log_path, val['path'])
                     else:
                         path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
-                    filepath = get_file(path, val['name'])
+                    filepath = DataParser.get_file(path, val['name'])
                     group_by = val['group_by'] if 'group_by' in val else ''
                     print("Fetched %s"%(filepath))
                     if params.is_live:
@@ -600,7 +539,7 @@ def main():
                         params.data['names'].append(key)
                         params.data['group_by'].append(group_by)
                     else:
-                        csv_data = parse_csv(filepath, val['headers'], group_by)
+                        csv_data = CSVParser.parse_csv(filepath, val['headers'], group_by)
                         if isinstance(csv_data, dict):
                             for group_name in csv_data.keys():
                                 params.data[group_name] = csv_data[group_name]
@@ -640,7 +579,7 @@ def main():
     else:
         filename = args.file
         path_to_file = args.path if args.path is not None else ''
-        filepath = get_file(os.path.join(log_path, path_to_file), filename) 
+        filepath = DataParser.get_file(os.path.join(log_path, path_to_file), filename) 
         params.title = args.title if args.title is not None else filename[:-4]
         params.graph_type = args.graph_type if args.graph_type is not None else GRAPH_TYPES.LINE.value
         group_by = args.group_by if args.group_by != '' else ''
@@ -652,7 +591,7 @@ def main():
         else:
             params.save_file = args.save if args.save is not None else False
             params.is_animated = args.animated if args.animated is not None else False
-            values = parse_csv(filepath, args.column_headers, group_by)
+            values = CSVParser.parse_csv(filepath, args.column_headers, group_by)
             params.data = {filename: values} if group_by is not None else values # type: ignore
             plot(params) 
 
