@@ -1,8 +1,17 @@
-# Test log directory
-log/
+# IDE 
+.vscode
+
+# Generated directories
+logs/
+graphs/
 
 # Ignore pycache
 *.pyc
+
+# Build
+dist/
+*.whl
+simple_csv_grapher.egg-info/
 
 # Ignore all yaml files
 *.yaml

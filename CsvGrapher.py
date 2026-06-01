@@ -15,17 +15,22 @@ from enum import Enum
 from typing import Dict, List, Any, Tuple
 
 # Project files
-from parser import DataParser, CSVParser
-from metrics import PerformanceMetrics, ATE, METRIC_TYPES
+from src.parsers.csv import CSVParser
+from src.parsers.data import DataParser
+from src.metrics.metrics import PerformanceMetrics, ATE, METRIC_TYPES
 
 # Log path configuration
-currentFolder = os.path.dirname(os.path.realpath(__file__))
-log_path = os.path.join(currentFolder, 'log')
-graphs_path = os.path.join(log_path, 'graphs')
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+log_path = os.path.join(curr_dir, 'logs')
+graphs_path = os.path.join(curr_dir, 'graphs')
 animated_path = os.path.join(graphs_path, 'animated')
+metrics_path = os.path.join(graphs_path, 'metrics')
 
 if not os.path.exists(animated_path):
     os.makedirs(animated_path)
+
+if not os.path.exists(metrics_path):
+    os.makedirs(metrics_path)
 
 # Enumerations
 class GRAPH_TYPES(Enum):
@@ -513,9 +518,9 @@ def main():
         filepath = ''  
         try:
             if args.yaml[-5:] != '.yaml':
-                filepath = os.path.join(currentFolder, "%s.yaml"%(args.yaml))
+                filepath = os.path.join(curr_dir, "%s.yaml"%(args.yaml))
             else:
-                filepath = os.path.join(currentFolder, args.yaml)
+                filepath = os.path.join(curr_dir, args.yaml)
             with open(filepath, 'r') as f:
                 yf = yaml.safe_load(f)
                 params.is_live = yf['live'] if 'live' in yf.keys() else False
@@ -527,9 +532,9 @@ def main():
                     val = file[key]
                     assigned_axis = val['axis'] if 'axis' in val else None
                     if 'path' in val: 
-                        path = os.path.join(log_path, val['path'])
+                        path = os.path.join(curr_dir, val['path'])
                     else:
-                        path = os.path.join(log_path, val['bcn_type'], val['comm_port_no'], val['folder'])
+                        path = os.path.join(curr_dir, val['bcn_type'], val['comm_port_no'], val['folder'])
                     filepath = DataParser.get_file(path, val['name'])
                     group_by = val['group_by'] if 'group_by' in val else ''
                     print("Fetched %s"%(filepath))

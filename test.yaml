@@ -1,10 +1,10 @@
 files:
   - Spiral1:
-      path: ''
+      path: 'examples/data'
       name: spiral.csv
       headers: [z, x, y]
   - Spiral2:
-      path: ''
+      path: 'examples/data'
       name: spiral4.csv
       headers: [y, z, x]
 labels:
