@@ -18,13 +18,13 @@ class CSVParser:
         return tmp
         
     @staticmethod
-    def parse_csv(filepath: str, col_names: List[str], group_by: str=''):
+    def parse_csv(filepath: str, col_names: Any, group_by: str=''):
         vals = []
         groups = dict()
         tmp_cols = copy(col_names)
         try:
             with open(filepath, 'r') as cr:
-                if group_by != '':
+                if group_by is not None:
                     reader = csv.reader(cr)
                     headers = next(reader)
                     tmp_cols.insert(0, group_by)
@@ -57,3 +57,17 @@ class CSVParser:
         if (isinstance(vals, list) and len(vals) == 0) or (isinstance(vals, dict) and len(vals.keys()) == 0):
             raise Exception('%s has no data.'%(filepath))
         return vals
+
+class DataParser:
+    @staticmethod
+    def get_file(path: str, filename: str) -> str:
+        if filename == 'latest':
+            list_of_files = glob(os.path.join(path, '*'), recursive=False)
+            list_of_files.sort()
+            filepath = max(list_of_files)
+        elif filename == 'lastModified':
+            list_of_files = glob(os.path.join(path, '*'), recursive=False)
+            filepath = max(list_of_files, key=os.path.getmtime)
+        else:
+            filepath = os.path.join(path, filename)
+        return filepath

@@ -1,5 +1,5 @@
 # Simple CSV Grapher 
-**When running the following script, make sure that your ```log/``` folder is at the same directory level as this script.**
+**When running the following script, make sure that your ```logs/``` folder is at the same directory level as this script.**
 
 ![Example Line Graph](./examples/images/line.png)
 
@@ -38,7 +38,7 @@ A simple program that graphs data from csv files.
 
 options:
   -h, --help            show this help message and exit
-  -p PATH, --path PATH  Path to desired file (leave blank if parent directory is log/).
+  -p PATH, --path PATH  Path to desired file from current working directory (leave blank if parent directory is logs/).
   -f FILE, --file FILE  Desired CSV file.
   -c COLUMN_HEADERS [COLUMN_HEADERS ...], --column-headers COLUMN_HEADERS [COLUMN_HEADERS ...]
                         Give desired column headers (leave spaces between each header).
@@ -54,16 +54,16 @@ options:
   -s, --save            Save graph.
   -y YAML, --yaml YAML  Generate graph via yaml config file.
 ```
-Go to ``` python3 CsvGrapher.py -h``` for an up-to-date description on how to use the command line. 
+Go to ``` python3 csv_grapher.py -h``` for an up-to-date description on how to use the command line. 
 
 Here's an example of how to use the command line.
 ```bash
-$ python3 CsvGrapher.py -p "path/to/file" -f filename.csv -c header_1 header_2 -g "line" -t "Example Line Graph" -s
+$ python3 csv_grapher.py -p "path/to/file" -f filename.csv -c header_1 header_2 -g "line" -t "Example Line Graph" -s
 ```
 ### YAML Config File
 Graphing multiple CSV files requires the use of the yaml configuration method. To use this method, run ```-y``` with the name of the yaml file (makes sure the yaml file is at the same level as this script). The following fields are used when writing a yaml file.
 - **```files```** is the keyword used to find all the files that will be used to generate a graph. 
-- **```path```** is the path to find the CSV file from within the ```log/``` directory. If the file is directly in the ```log/``` directory, put empty single quotes ```''``` in this field.
+- **```path```** is the path to find the CSV file from within the ```logs/``` directory. If the file is directly in the ```logs/``` directory, put empty single quotes ```''``` in this field.
 - **```name```** is the CSV filename. Using the keyword ```latest``` will grab the last generated file alphabetically. Using the keyword ```lastModified``` will grab the last modified file. 
 - **```headers```** correlates to the column names that will be searched when retrieving data. Should be provided as a list of strings. 
 - **```group_by```** groups data from a single file based on the column specified. Can only be used with one colum at a time.
@@ -103,11 +103,11 @@ save: true
 
 Run the following command to run the script with a yaml file.  
 ```bash
-$ python3 CsvGrapher.py -y example.yaml
+$ python3 csv_grapher.py -y example.yaml
 ```  
 It can also be run without the ```.yaml``` extension like this.
 ```bash
-$ python3 CsvGrapher.py -y example
+$ python3 csv_grapher.py -y example
 ``` 
 
 Example output:
@@ -115,7 +115,7 @@ Example output:
 ![Example Scatter Plot](./examples/images/scatter.png)
 
 ## Animated Graphs
-Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```log/animated/```. Supports the `group_by` command.
+Both graphing methods: command line and YAML configuration file can take advantage of animated graphs as long as the graph specified is supported. If animation is enabled the save flag is disabled as all animated graphs are automatically saved as a GIF in ```graphs/animated/```. Supports the `group_by` command.
 
 ### Supported Graph Types
 *2D Line Graph*

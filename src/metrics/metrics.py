@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from enum import Enum
 from typing import Dict, List, Any, Tuple
 
+from src.config.structures import Parameters
+from src.util.file_helper import create_filename
+
 class METRIC_TYPES(Enum):
     ATE = 'ate'
 
@@ -217,3 +220,30 @@ class ATE:
         mu = ATE.calc_ate_mean2(ytrue, ymeas, val_type)
         sd = ATE.calc_ate_sd2(mu, ytrue, ymeas, val_type)
         return (rmse, mu, sd)
+
+    @staticmethod
+    def show_ate_results(metric_name: str, expected: Any, path: Any, p: Parameters, metrics_path: str) -> None:
+        data_pos = []
+        data_x  = []
+        data_y = []
+        keys = list(p.data.keys())
+        ground_truth = p.data[expected]
+        row_labels = []
+        for i in range(0,len(keys)):
+            if keys[i] != expected:
+                method = p.data[keys[i]]
+                metrics = ATE.get_pose_diff_metrics(ground_truth, method, keys[i])
+                data_pos.append(metrics)
+                metrics = ATE.get_single_val_metrics(ground_truth, method, "x")
+                data_x.append(metrics)
+                metrics = ATE.get_single_val_metrics(ground_truth, method, "y")
+                data_y.append(metrics)
+                row_labels.append(keys[i])
+
+        collection = [data_pos, data_x, data_y]
+        #print(collection)
+        order = ["Position", "X", "Y"]
+        cols = ["RSME", "Mean", "Standard Deviation"]
+        filename = create_filename("%s_ATE"%p.title)
+        PerformanceMetrics.show_table(f"%s_ATE"%p.title, filename, row_labels, cols, collection, order, metrics_path, p.save_file)
+        print("Complete")
